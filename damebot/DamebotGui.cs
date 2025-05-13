@@ -81,7 +81,7 @@ namespace damebot
 		}
 		private void DrawPieces(Graphics board_graphics)
 		{
-			foreach (PIECE piece in board.GetPieces())
+			foreach (Piece piece in board.GetPieces())
 			{
 				Rectangle rectangle = ComputeRectangle(piece.position);
 				board_graphics.DrawImage(piece.image, rectangle);
