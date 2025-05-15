@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 namespace damebot_engine
 {
@@ -25,6 +26,7 @@ namespace damebot_engine
 			return CanCapture(Position);
 		}
 		public abstract bool CanBePromoted();
+		public abstract Piece Promote();
 
 		protected abstract bool HasDifferentColour(Piece? other);
 	}
@@ -84,6 +86,10 @@ namespace damebot_engine
 		{
 			return Position.Y == board.Size - 1;
 		}
+		public override Piece Promote()
+		{
+			return new WhiteKing(board, Position);
+		}
 		protected override int Forward { get => 1; }
 		protected override int DoubleForward { get => 2 * Forward; }
 
@@ -99,6 +105,10 @@ namespace damebot_engine
 		public override bool CanBePromoted()
 		{
 			return Position.Y == 0;
+		}
+		public override Piece Promote()
+		{
+			return new BlackKing(board, Position);
 		}
 		protected override int Forward { get => -1; }
 		protected override int DoubleForward { get => 2 * Forward; }
@@ -175,6 +185,10 @@ namespace damebot_engine
 		public override bool CanBePromoted()
 		{
 			return false;
+		}
+		public override Piece Promote()
+		{
+			throw new InvalidOperationException();
 		}
 	}
 	class WhiteKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)

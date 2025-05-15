@@ -70,17 +70,28 @@ namespace damebot_engine
 		}
 		public void PerformMove(IReadOnlyList<SQUARE> move, bool jump)
 		{
+			Debug.Assert(Board[move[0]] != null);
 			Debug.Assert(move.Count >= 2);
+
 			SQUARE original = move[0];
 			SQUARE next = move[^1];
-			Board[next] = Board[original];
-			Board[original] = null;
 
-			Board[next]!.Move(next);
+			Piece moved = Board[original]!;
+			Board[original] = null;
+			Board[next] = moved;
+
+			moved.Move(next);
 
 			if (jump)
 			{
 				RemovePieces(move);
+			}
+			if (moved.CanBePromoted())
+			{
+				Piece promoted = moved.Promote();
+				Board[next] = promoted;
+				player_on_move.RemovePiece(moved);
+				player_on_move.AddPiece(promoted);
 			}
 
 			SwitchPlayers();
