@@ -60,8 +60,8 @@ namespace damebot
 		private void ResetGame()
 		{
 			InitPlayers(computer_black_radio.Checked, white_computer_radio.Checked);
-
 			board = new DefaultBoard();
+			board.GenerateInitialPieces(white, black);
 			engine = new DameEngine(board, white, black);
 			engine.OnMove += OnMoveHandler;
 

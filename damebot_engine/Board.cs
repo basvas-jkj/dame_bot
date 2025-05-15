@@ -4,10 +4,10 @@ namespace damebot_engine
 {
 	public interface IBoard
 	{
+		int Size { get; }
 		Piece? this[SQUARE position] { get; set; }
 
-		int Size { get; }
-		IReadOnlyList<Piece> GetPieces();
+		void GenerateInitialPieces(Player white, Player black);
 	}
 	public class DefaultBoard: IBoard
 	{
@@ -20,6 +20,11 @@ namespace damebot_engine
 
 		public int Size { get => 8; }
 
+		public DefaultBoard()
+		{
+			board = new Piece[Size, Size];
+		}
+
 		IEnumerable<SQUARE> GenerateInitialPositions()
 		{
 			for (int f = 0; f < Size; f += 1)
@@ -28,28 +33,24 @@ namespace damebot_engine
 				yield return new SQUARE(f, Size + f % 2 - 2);
 			}
 		}
-		IEnumerable<Piece> GenerateInitialPieces()
+		public void GenerateInitialPieces(Player white, Player black)
 		{
 			foreach (SQUARE position in GenerateInitialPositions())
 			{
-				Piece piece = (position.Y < Size / 2)
-					? new WhiteMan(this, position)
-					: new BlackMan(this, position);
+				Piece piece;
+				if (position.Y < Size / 2)
+				{
+					piece = new WhiteMan(this, position);
+					white.AddPiece(piece);
+				}
+				else
+				{
+					piece = new BlackMan(this, position);
+					black.AddPiece(piece);
+				}
 
 				this[position] = piece;
-				yield return piece;
 			}
-		}
-
-		List<Piece> pieces;
-		public DefaultBoard()
-		{
-			board = new Piece[Size, Size];
-			pieces = new List<Piece>(GenerateInitialPieces());
-		}
-		public IReadOnlyList<Piece> GetPieces()
-		{
-			return pieces;
 		}
 	}
 }
