@@ -55,7 +55,7 @@ namespace damebot
 		private void InitPlayers(bool white_computer, bool black_computer)
 		{
 			white = (white_computer) ? new DamebotDefaultPlayer() : new RealPlayer();
-			white = (black_computer) ? new DamebotDefaultPlayer() : new RealPlayer();
+			black = (black_computer) ? new DamebotDefaultPlayer() : new RealPlayer();
 		}
 		private void ResetGame()
 		{

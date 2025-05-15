@@ -45,7 +45,7 @@ namespace damebot_engine
 
 		public override bool Equals(object? o)
 		{
-			return o != null && o.GetType() != GetType() && this == (SQUARE)o;
+			return o != null && o.GetType() == GetType() && this == (SQUARE)o;
 		}
 		public override int GetHashCode()
 		{
