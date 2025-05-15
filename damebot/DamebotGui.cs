@@ -47,29 +47,15 @@ namespace damebot
 		}
 
 		IBoard board;
-		IPlayer white;
-		IPlayer black;
+		Player white;
+		Player black;
 		IEngine engine;
 		List<SQUARE> selected_squares = new();
 
 		private void InitPlayers(bool white_computer, bool black_computer)
 		{
-			if (white_computer)
-			{
-
-			}
-			else
-			{
-
-			}
-			if (black_computer)
-			{
-
-			}
-			else
-			{
-
-			}
+			white = (white_computer) ? new DamebotDefaultPlayer() : new RealPlayer();
+			white = (black_computer) ? new DamebotDefaultPlayer() : new RealPlayer();
 		}
 		private void ResetGame()
 		{

@@ -61,6 +61,7 @@ namespace damebot_engine
 				//
 			}
 
+			SwitchPlayers();
 			OnMove?.Invoke();
 		}
 	}

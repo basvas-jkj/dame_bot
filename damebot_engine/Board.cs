@@ -18,7 +18,7 @@ namespace damebot_engine
 			set => board[position.X, position.Y] = value;
 		}
 
-		public int Size => 8;
+		public int Size { get => 8; }
 
 		IEnumerable<SQUARE> GenerateInitialPositions()
 		{

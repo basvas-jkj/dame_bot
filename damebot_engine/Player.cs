@@ -1,11 +1,11 @@
 ﻿namespace damebot_engine
 {
-	public interface IPlayer
-	{
-
-	}
-	public class Player
-	{
-
-	}
+	public abstract class Player
+	{ }
+	public class RealPlayer: Player
+	{ }
+	public class AutomaticPlayer: Player
+	{ }
+	public class DamebotDefaultPlayer: AutomaticPlayer
+	{ }
 }
