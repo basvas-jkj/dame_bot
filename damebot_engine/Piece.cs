@@ -6,23 +6,23 @@ namespace damebot_engine
 
 	public enum MOVE_TYPE
 	{
-		move, jump, invalid
+		move, jump, invalid, incomplete_jump
 	}
 	public abstract class Piece(IBoard board, SQUARE position, Image image)
 	{
 		protected IBoard board = board;
 		public Image image { get; } = image;
-		public SQUARE position { get; private set; } = position;
+		public SQUARE Position { get; private set; } = position;
 
 		public void Move(SQUARE next_position)
 		{
-			position = next_position;
+			Position = next_position;
 		}
 		public abstract MOVE_TYPE GetMoveType(SQUARE original, SQUARE next);
 		public abstract bool CanCapture(SQUARE original);
 		public bool CanCapture()
 		{
-			return CanCapture(position);
+			return CanCapture(Position);
 		}
 		public abstract bool CanBePromoted();
 
@@ -37,7 +37,7 @@ namespace damebot_engine
 		bool IsJumpPossible(SQUARE original, SQUARE next)
 		{
 			Piece? p = board[original | next];
-			return HasDifferentColour(p);
+			return HasDifferentColour(p) && board[next] == null;
 		}
 		public sealed override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
 		{
@@ -61,7 +61,15 @@ namespace damebot_engine
 		{
 			SQUARE obstacle = original + direction;
 			SQUARE destination = obstacle + direction;
-			return board[destination] == null && HasDifferentColour(board[obstacle]);
+
+			if (obstacle.IsOnBoard(board) && destination.IsOnBoard(board))
+			{
+				return board[destination] == null && HasDifferentColour(board[obstacle]);
+			}
+			else
+			{
+				return false;
+			}
 		}
 		public sealed override bool CanCapture(SQUARE original)
 		{
@@ -74,7 +82,7 @@ namespace damebot_engine
 
 		public override bool CanBePromoted()
 		{
-			return position.Y == board.Size - 1;
+			return Position.Y == board.Size - 1;
 		}
 		protected override int Forward { get => 1; }
 		protected override int DoubleForward { get => 2 * Forward; }
@@ -90,7 +98,7 @@ namespace damebot_engine
 
 		public override bool CanBePromoted()
 		{
-			return position.Y == 0;
+			return Position.Y == 0;
 		}
 		protected override int Forward { get => -1; }
 		protected override int DoubleForward { get => 2 * Forward; }
