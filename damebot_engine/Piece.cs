@@ -1,16 +1,16 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace damebot_engine
 {
-	using SQUARE_DIFF = (int x, int y);
+	using SQUARE_DIFF = (int X, int Y);
 
 	public enum MOVE_TYPE
 	{
 		move, jump, invalid
 	}
-	public abstract class Piece(SQUARE position, Image image)
+	public abstract class Piece(IBoard board, SQUARE position, Image image)
 	{
+		protected IBoard board = board;
 		public Image image { get; } = image;
 		public SQUARE position { get; private set; } = position;
 
@@ -19,88 +19,172 @@ namespace damebot_engine
 			position = next_position;
 		}
 		public abstract MOVE_TYPE GetMoveType(SQUARE original, SQUARE next);
-
-		protected static SQUARE_DIFF Normalise(SQUARE_DIFF diff)
+		public abstract bool CanCapture(SQUARE original);
+		public bool CanCapture()
 		{
-			return (Math.Sign(diff.x), Math.Sign(diff.y));
+			return CanCapture(position);
+		}
+		public abstract bool CanBePromoted();
+
+		protected abstract bool HasDifferentColour(Piece? other);
+	}
+
+	abstract class ManBase(IBoard board, SQUARE position, Image image): Piece(board, position, image)
+	{
+		protected abstract int Forward { get; }
+		protected abstract int DoubleForward { get; }
+
+		bool IsJumpPossible(SQUARE original, SQUARE next)
+		{
+			Piece? p = board[original | next];
+			return HasDifferentColour(p);
+		}
+		public sealed override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
+		{
+			SQUARE_DIFF difference = next - original;
+			if ((difference == (1, Forward) || difference == (-1, Forward))
+				&& board[next] == null)
+			{
+				return MOVE_TYPE.move;
+			}
+			else if ((difference == (2, DoubleForward) || difference == (-2, DoubleForward))
+				&& IsJumpPossible(original, next))
+			{
+				return MOVE_TYPE.jump;
+			}
+			else
+			{
+				return MOVE_TYPE.invalid;
+			}
+		}
+		private bool CanCapture(SQUARE original, SQUARE_DIFF direction)
+		{
+			SQUARE obstacle = original + direction;
+			SQUARE destination = obstacle + direction;
+			return board[destination] == null && HasDifferentColour(board[obstacle]);
+		}
+		public sealed override bool CanCapture(SQUARE original)
+		{
+			return CanCapture(original, (1, Forward)) || CanCapture(original, (-1, Forward));
 		}
 	}
-	class WhiteMan(SQUARE position): Piece(position, loaded_image)
+	class WhiteMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/white_man.png");
 
-		public override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
+		public override bool CanBePromoted()
 		{
-			SQUARE_DIFF difference = next - original;
-			if (difference == (1, 1) || difference == (-1, 1))
-			{
-				return MOVE_TYPE.move;
-			}
-			else if (difference == (2, 2) || difference == (-2, 2))
-			{
-				return MOVE_TYPE.jump;
-			}
-			else
-			{
-				return MOVE_TYPE.invalid;
-			}
+			return position.Y == board.Size - 1;
+		}
+		protected override int Forward { get => 1; }
+		protected override int DoubleForward { get => 2 * Forward; }
+
+		protected override bool HasDifferentColour(Piece? other)
+		{
+			return other is BlackMan || other is BlackKing;
 		}
 	}
-	class BlackMan(SQUARE position): Piece(position, loaded_image)
+	class BlackMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/black_man.png");
 
+		public override bool CanBePromoted()
+		{
+			return position.Y == 0;
+		}
+		protected override int Forward { get => -1; }
+		protected override int DoubleForward { get => 2 * Forward; }
+		protected override bool HasDifferentColour(Piece? other)
+		{
+			return other is WhiteMan || other is WhiteKing;
+		}
+	}
+
+
+	abstract class KingBase(IBoard board, SQUARE position, Image image): Piece(board, position, image)
+	{
+		private bool CanCapture(SQUARE original, SQUARE_DIFF direction)
+		{
+			for (SQUARE s = original; s.IsOnBoard(board); s += direction)
+			{
+				Piece? p = board[s];
+				if (HasDifferentColour(p))
+				{
+					return HasDifferentColour(board[s + direction]);
+				}
+				else if (p != null)
+				{
+					return false;
+				}
+			}
+			return false;
+		}
+		public sealed override bool CanCapture(SQUARE original)
+		{
+			return CanCapture(original, (1, 1)) || CanCapture(original, (-1, -1))
+				|| CanCapture(original, (1, -1)) || CanCapture(original, (-1, 1));
+		}
 		public override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
 		{
 			SQUARE_DIFF difference = next - original;
-			if (difference == (1, -1) || difference == (-1, -1))
-			{
-				return MOVE_TYPE.move;
-			}
-			else if (difference == (2, -2) || difference == (-2, -2))
-			{
-				return MOVE_TYPE.jump;
-			}
-			else
+			if (difference.X != difference.Y && difference.X != -difference.Y)
 			{
 				return MOVE_TYPE.invalid;
 			}
+			else if (board[next] != null)
+			{
+				return MOVE_TYPE.invalid;
+			}
+
+			bool met_enemy_piece = false;
+			SQUARE_DIFF direction = difference.Normalise();
+			for (SQUARE s = original; s != next; s += direction)
+			{
+				Piece? p = board[s];
+				if (p == null)
+				{
+					continue;
+				}
+				else if (HasDifferentColour(p))
+				{
+					if (met_enemy_piece)
+					{
+						return MOVE_TYPE.invalid;
+					}
+					else
+					{
+						met_enemy_piece = true;
+					}
+				}
+				else
+				{
+					return MOVE_TYPE.invalid;
+				}
+			}
+
+			return (met_enemy_piece) ? MOVE_TYPE.jump : MOVE_TYPE.move;
+		}
+		public override bool CanBePromoted()
+		{
+			return false;
 		}
 	}
-	class WhiteKing(SQUARE position): Piece(position, loaded_image)
+	class WhiteKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/white_king.png");
 
-		public override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
+		protected override bool HasDifferentColour(Piece? other)
 		{
-			SQUARE_DIFF difference = next - original;
-			SQUARE_DIFF direction = Normalise(difference);
-
-			if (difference.x != difference.y && difference.x != -difference.y)
-			{
-				return MOVE_TYPE.invalid;
-			}
-
-#warning Doplnit implementaci.
-			return MOVE_TYPE.move;
+			return other is BlackMan || other is BlackKing;
 		}
 	}
-	class BlackKing(SQUARE position): Piece(position, loaded_image)
+	class BlackKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/black_king.png");
 
-		public override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
+		protected override bool HasDifferentColour(Piece? other)
 		{
-			SQUARE_DIFF difference = next - original;
-			SQUARE_DIFF direction = Normalise(difference);
-
-			if (difference.x != difference.y && difference.x != -difference.y)
-			{
-				return MOVE_TYPE.invalid;
-			}
-
-#warning Doplnit implementaci.
-			return MOVE_TYPE.move;
+			return other is WhiteMan || other is WhiteKing;
 		}
 	}
 }

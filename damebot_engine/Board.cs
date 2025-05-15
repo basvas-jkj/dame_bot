@@ -33,8 +33,8 @@ namespace damebot_engine
 			foreach (SQUARE position in GenerateInitialPositions())
 			{
 				Piece piece = (position.Y < Size / 2)
-					? new WhiteMan(position)
-					: new BlackMan(position);
+					? new WhiteMan(this, position)
+					: new BlackMan(this, position);
 
 				this[position] = piece;
 				yield return piece;
