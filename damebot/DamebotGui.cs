@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace damebot
@@ -88,22 +89,22 @@ namespace damebot
 			Piece piece = board[selected_squares[0]] ?? throw new NullReferenceException();
 			SQUARE original = selected_squares[^1];
 
-			MOVE_VALIDITY validity = engine.ValidateMove(piece, original, position);
-			if (validity == MOVE_VALIDITY.valid)
+			MOVE_TYPE type = engine.ValidateMove(piece, original, position);
+			if (type == MOVE_TYPE.incomplete_jump)
+			{
+				selected_squares.Add(position);
+			}
+			else if (type == MOVE_TYPE.invalid)
+			{
+				selected_squares.Clear();
+			}
+			else
 			{
 				List<SQUARE> move = selected_squares;
 				selected_squares = new List<SQUARE>();
 
 				move.Add(position);
-				engine.PerformMove(move);
-			}
-			else if (validity == MOVE_VALIDITY.incomplete)
-			{
-				selected_squares.Add(position);
-			}
-			else
-			{
-				selected_squares.Clear();
+				engine.PerformMove(move, type == MOVE_TYPE.jump);
 			}
 			Draw();
 		}
@@ -129,9 +130,13 @@ namespace damebot
 		}
 		private void DrawPieces(Graphics board_graphics)
 		{
-			foreach (Piece piece in board.GetPieces())
+			IEnumerable<Piece> all_pieces = Enumerable.Concat(
+				white.GetPieces(),
+				black.GetPieces()
+			);
+			foreach (Piece piece in all_pieces)
 			{
-				Rectangle rectangle = ComputeRectangle(piece.position);
+				Rectangle rectangle = ComputeRectangle(piece.Position);
 				board_graphics.DrawImage(piece.image, rectangle);
 			}
 		}

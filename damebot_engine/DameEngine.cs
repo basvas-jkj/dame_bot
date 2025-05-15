@@ -1,18 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace damebot_engine
 {
-	public enum MOVE_VALIDITY
-	{
-		invalid, valid, incomplete
-	}
-
 	public delegate void MoveEvent();
 	public interface IEngine
 	{
 		bool IsOnMovePiece(SQUARE position);
-		MOVE_VALIDITY ValidateMove(Piece piece, SQUARE original, SQUARE next);
-		void PerformMove(IReadOnlyList<SQUARE> move);
+		MOVE_TYPE ValidateMove(Piece piece, SQUARE original, SQUARE next);
+		void PerformMove(IReadOnlyList<SQUARE> move, bool jump);
 
 		event MoveEvent? OnMove;
 	}
@@ -23,6 +19,10 @@ namespace damebot_engine
 		public Player Black { get; } = black;
 
 		private Player player_on_move = white;
+		private Player waiting_player
+		{
+			get => (player_on_move == White) ? Black : White;
+		}
 		private void SwitchPlayers()
 		{
 			player_on_move = (player_on_move == White) ? Black : White;
@@ -41,18 +41,36 @@ namespace damebot_engine
 				return Board[position] is BlackMan || Board[position] is BlackKing;
 			}
 		}
-		public MOVE_VALIDITY ValidateMove(Piece piece, SQUARE original, SQUARE next)
+		public MOVE_TYPE ValidateMove(Piece piece, SQUARE original, SQUARE next)
 		{
 			MOVE_TYPE type = piece.GetMoveType(original, next);
 
-			if (type == MOVE_TYPE.move)
+			if (type == MOVE_TYPE.jump)
 			{
-				return MOVE_VALIDITY.valid;
+				return (piece.CanCapture(next)) ? MOVE_TYPE.incomplete_jump : MOVE_TYPE.jump;
 			}
-			return MOVE_VALIDITY.invalid;
+			if (type == MOVE_TYPE.move && !player_on_move.CanCapture())
+			{
+				return MOVE_TYPE.move;
+			}
+			else
+			{
+				return MOVE_TYPE.invalid;
+			}
 		}
-		public void PerformMove(IReadOnlyList<SQUARE> move)
+
+		private void RemovePieces(IReadOnlyList<SQUARE> move)
 		{
+			for (int fa = 0, fb = 1; fb < move.Count; fa += 1, fb += 1)
+			{
+				SQUARE s = move[fa] | move[fb];
+				waiting_player.RemovePiece(Board[s]!);
+				Board[s] = null;
+			}
+		}
+		public void PerformMove(IReadOnlyList<SQUARE> move, bool jump)
+		{
+			Debug.Assert(move.Count >= 2);
 			SQUARE original = move[0];
 			SQUARE next = move[^1];
 			Board[next] = Board[original];
@@ -60,9 +78,9 @@ namespace damebot_engine
 
 			Board[next]!.Move(next);
 
-			for (int fa = 0, fb = 1; fb < move.Count; fa += 1, fb += 1)
+			if (jump)
 			{
-				//
+				RemovePieces(move);
 			}
 
 			SwitchPlayers();
