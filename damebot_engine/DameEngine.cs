@@ -16,13 +16,17 @@ namespace damebot_engine
 
 		event MoveEvent? OnMove;
 	}
-	public class DameEngine(IBoard board, IPlayer white, IPlayer black): IEngine
+	public class DameEngine(IBoard board, Player white, Player black): IEngine
 	{
 		public IBoard Board { get; } = board;
-		public IPlayer White { get; } = white;
-		public IPlayer Black { get; } = black;
+		public Player White { get; } = white;
+		public Player Black { get; } = black;
 
-		private IPlayer player_on_move = white;
+		private Player player_on_move = white;
+		private void SwitchPlayers()
+		{
+			player_on_move = (player_on_move == White) ? Black : White;
+		}
 
 		public event MoveEvent? OnMove;
 
