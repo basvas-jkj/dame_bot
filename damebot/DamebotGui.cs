@@ -1,5 +1,6 @@
 using damebot_engine;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
@@ -13,9 +14,9 @@ namespace damebot
 		static readonly Color selected = Color.FromArgb(255, 0, 0);
 		static readonly Color marked = Color.FromArgb(255, 0, 0);
 
-		private SolidBrush SelectColour(Square square)
+		private SolidBrush SelectColour(SQUARE square)
 		{
-			if (square == selected_square)
+			if (selected_squares.Contains(square))
 			{
 				return new SolidBrush(selected);
 			}
@@ -28,7 +29,7 @@ namespace damebot
 				return new SolidBrush(light);
 			}
 		}
-		private Rectangle ComputeRectangle(Square square)
+		private Rectangle ComputeRectangle(SQUARE square)
 		{
 			int left = square.X * board_panel.Size.Width / board.Size;
 			int upper = board_panel.Size.Height - (square.Y + 1) * board_panel.Size.Height / board.Size;
@@ -37,32 +38,93 @@ namespace damebot
 
 			return new Rectangle(left, upper, width, height);
 		}
-		private Square LocationToSquare(Point point)
+		private SQUARE LocationToSquare(Point point)
 		{
 			int x = board.Size * point.X / board_panel.Width;
 			int y = board.Size - board.Size * point.Y / board_panel.Height - 1;
 
-			return new Square(x, y);
+			return new SQUARE(x, y);
 		}
 
 		IBoard board;
-		Square? selected_square = null;
+		IPlayer white;
+		IPlayer black;
+		IEngine engine;
+		List<SQUARE> selected_squares = new();
 
-		private IBoard ResetGame()
+		private void InitPlayers(bool white_computer, bool black_computer)
 		{
+			if (white_computer)
+			{
+
+			}
+			else
+			{
+
+			}
+			if (black_computer)
+			{
+
+			}
+			else
+			{
+
+			}
+		}
+		private void ResetGame()
+		{
+			InitPlayers(computer_black_radio.Checked, white_computer_radio.Checked);
+
 			board = new DefaultBoard();
-			Debug.WriteLine("reset game");
+			engine = new DameEngine(board, white, black);
+			engine.OnMove += OnMoveHandler;
+
 			Draw();
-			return board;
 		}
 		public DamebotGui()
 		{
 			InitializeComponent();
-			board = ResetGame();
+			ResetGame();
 		}
 
+		#region move selection
+		private void SelectPiece(SQUARE position)
+		{
+			Debug.Assert(selected_squares.Count == 0);
+			if (engine.IsOnMovePiece(position))
+			{
+				selected_squares.Add(position);
+				Draw();
+			}
+		}
+		private void SelectMove(SQUARE position)
+		{
+			Piece piece = board[selected_squares[0]] ?? throw new NullReferenceException();
+			SQUARE original = selected_squares[^1];
+
+			MOVE_VALIDITY validity = engine.ValidateMove(piece, original, position);
+			if (validity == MOVE_VALIDITY.valid)
+			{
+				List<SQUARE> move = selected_squares;
+				selected_squares = new List<SQUARE>();
+
+				move.Add(position);
+				engine.PerformMove(move);
+			}
+			else if (validity == MOVE_VALIDITY.incomplete)
+			{
+				selected_squares.Add(position);
+			}
+			else
+			{
+				selected_squares.Clear();
+			}
+			Draw();
+		}
+
+		#endregion
 		#region draw board and pieces
-		private void DrawSquare(Graphics board_graphics, Square square)
+		private void DrawSquare(Graphics board_graphics, SQUARE square)
 		{
 			Rectangle board_square = ComputeRectangle(square);
 			Brush brush = SelectColour(square);
@@ -75,7 +137,7 @@ namespace damebot
 			{
 				for (int fb = 0; fb < board.Size; fb += 1)
 				{
-					DrawSquare(board_graphics, new Square(fa, fb));
+					DrawSquare(board_graphics, new SQUARE(fa, fb));
 				}
 			}
 		}
@@ -98,24 +160,24 @@ namespace damebot
 		}
 		#endregion
 		#region event handlers
+		private void OnMoveHandler()
+		{
+			Draw();
+		}
 		private void board_panel_Paint(object sender, PaintEventArgs e)
 		{
-			Debug.WriteLine("paint event");
 			Draw(e.Graphics);
 		}
 		private void board_panel_MouseClick(object sender, MouseEventArgs e)
 		{
-			Square square = LocationToSquare(e.Location);
-
-			if (selected_square == null)
+			SQUARE square = LocationToSquare(e.Location);
+			if (selected_squares.Count == 0)
 			{
-				selected_square = square;
-				Debug.WriteLine("klinutí myši");
-				Draw();
+				SelectPiece(square);
 			}
 			else
 			{
-				selected_square = null;
+				SelectMove(square);
 			}
 		}
 		private void new_game_button_Click(object sender, EventArgs e)
@@ -139,12 +201,9 @@ namespace damebot
 		}
 		private void board_panel_MouseLeave(object sender, EventArgs e)
 		{
-			selected_square = null;
-			Debug.WriteLine("myš odešla");
+			selected_squares.Clear();
 			Draw();
 		}
 		#endregion
-
-
 	}
 }

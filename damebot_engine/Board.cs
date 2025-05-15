@@ -2,44 +2,49 @@
 
 namespace damebot_engine
 {
-	public record class Square(int X, int Y);
-	public delegate void MoveEvent();
-
 	public interface IBoard
 	{
-		public int Size { get; }
-		public IReadOnlyList<Piece> GetPieces();
+		Piece? this[SQUARE position] { get; set; }
+
+		int Size { get; }
+		IReadOnlyList<Piece> GetPieces();
 	}
 	public class DefaultBoard: IBoard
 	{
+		private Piece?[,] board;
+		public Piece? this[SQUARE position]
+		{
+			get => board[position.X, position.Y];
+			set => board[position.X, position.Y] = value;
+		}
+
 		public int Size => 8;
 
-		IEnumerable<Square> GenerateInitialPositions()
+		IEnumerable<SQUARE> GenerateInitialPositions()
 		{
 			for (int f = 0; f < Size; f += 1)
 			{
-				yield return new Square(f, f % 2);
-				yield return new Square(f, Size + f % 2 - 2);
+				yield return new SQUARE(f, f % 2);
+				yield return new SQUARE(f, Size + f % 2 - 2);
 			}
 		}
 		IEnumerable<Piece> GenerateInitialPieces()
 		{
-			foreach (Square position in GenerateInitialPositions())
+			foreach (SQUARE position in GenerateInitialPositions())
 			{
-				if (position.Y < Size / 2)
-				{
-					yield return new WhiteMan(position);
-				}
-				else
-				{
-					yield return new BlackMan(position);
-				}
+				Piece piece = (position.Y < Size / 2)
+					? new WhiteMan(position)
+					: new BlackMan(position);
+
+				this[position] = piece;
+				yield return piece;
 			}
 		}
 
 		List<Piece> pieces;
 		public DefaultBoard()
 		{
+			board = new Piece[Size, Size];
 			pieces = new List<Piece>(GenerateInitialPieces());
 		}
 		public IReadOnlyList<Piece> GetPieces()
