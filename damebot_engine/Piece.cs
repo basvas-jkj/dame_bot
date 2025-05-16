@@ -123,12 +123,13 @@ namespace damebot_engine
 	{
 		private bool CanCapture(SQUARE original, SQUARE_DIFF direction)
 		{
-			for (SQUARE s = original; s.IsOnBoard(board); s += direction)
+			for (SQUARE s = original + direction; s.IsOnBoard(board); s += direction)
 			{
 				Piece? p = board[s];
 				if (HasDifferentColour(p))
 				{
-					return HasDifferentColour(board[s + direction]);
+					s += direction;
+					return s.IsOnBoard(board) && board[s] == null;
 				}
 				else if (p != null)
 				{
@@ -156,7 +157,7 @@ namespace damebot_engine
 
 			bool met_enemy_piece = false;
 			SQUARE_DIFF direction = difference.Normalise();
-			for (SQUARE s = original; s != next; s += direction)
+			for (SQUARE s = original + direction; s != next; s += direction)
 			{
 				Piece? p = board[s];
 				if (p == null)
