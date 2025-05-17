@@ -17,7 +17,7 @@ namespace damebot
 
 		private SolidBrush SelectColour(SQUARE square)
 		{
-			if (selected_squares.Contains(square))
+			if (selected_squares?.Contains(square) == true)
 			{
 				return new SolidBrush(selected);
 			}
@@ -51,7 +51,8 @@ namespace damebot
 		Player white;
 		Player black;
 		IEngine engine;
-		List<SQUARE> selected_squares = new();
+		IReadOnlyList<SQUARE>? selected_squares;
+		MOVE current_move;
 
 		private void InitPlayers(bool white_computer, bool black_computer)
 		{
@@ -77,35 +78,48 @@ namespace damebot
 		#region move selection
 		private void SelectPiece(SQUARE position)
 		{
-			Debug.Assert(selected_squares.Count == 0);
+			Debug.Assert(selected_squares == null);
+
 			if (engine.IsOnMovePiece(position))
 			{
-				selected_squares.Add(position);
+				current_move = new(position);
+				selected_squares = current_move.Squares;
 				Draw();
 			}
 		}
 		private void SelectMove(SQUARE position)
 		{
-			Piece piece = board[selected_squares[0]] ?? throw new NullReferenceException();
-			SQUARE original = selected_squares[^1];
+			Debug.Assert(selected_squares != null);
 
-			MOVE_TYPE type = engine.ValidateMove(piece, original, position);
-			if (type == MOVE_TYPE.incomplete_jump)
+			Piece piece = board[selected_squares[0]] ?? throw new NullReferenceException();
+
+			MOVE_INFO info = engine.ValidateMove(piece, current_move, position);
+			if (info.IncompleteJump)
 			{
-				selected_squares.Add(position);
+				current_move.AddJump(info.Square, info.CapturedPiece!);
+				Draw();
+				return;
 			}
-			else if (type == MOVE_TYPE.invalid)
+			else if (info.CompleteJump)
 			{
-				selected_squares.Clear();
+				current_move.AddJump(info.Square, info.CapturedPiece!);
+			}
+			else if (info.Move)
+			{
+				current_move.AddMove(info.Square);
 			}
 			else
 			{
-				List<SQUARE> move = selected_squares;
-				selected_squares = new List<SQUARE>();
-
-				move.Add(position);
-				engine.PerformMove(move, type == MOVE_TYPE.jump);
+				ResetMove();
+				return;
 			}
+
+			engine.PerformMove(current_move);
+			ResetMove();
+		}
+		void ResetMove()
+		{
+			selected_squares = null;
 			Draw();
 		}
 
@@ -162,7 +176,7 @@ namespace damebot
 		private void board_panel_MouseClick(object sender, MouseEventArgs e)
 		{
 			SQUARE square = LocationToSquare(e.Location);
-			if (selected_squares.Count == 0)
+			if (selected_squares == null)
 			{
 				SelectPiece(square);
 			}
@@ -192,8 +206,7 @@ namespace damebot
 		}
 		private void board_panel_MouseLeave(object sender, EventArgs e)
 		{
-			selected_squares.Clear();
-			Draw();
+			ResetMove();
 		}
 		#endregion
 	}

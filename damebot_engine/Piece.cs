@@ -1,14 +1,40 @@
 ﻿using System;
 using System.Drawing;
+using System.Linq;
 
 namespace damebot_engine
 {
 	using SQUARE_DIFF = (int X, int Y);
-
-	public enum MOVE_TYPE
+	public struct MOVE_INFO
 	{
-		move, jump, invalid, incomplete_jump
+		public bool IncompleteJump { get; } = false;
+		public bool CompleteJump { get; } = false;
+		public bool Move { get; } = false;
+
+		public SQUARE Square { get; }
+		public Piece? CapturedPiece { get; } = null;
+
+		public MOVE_INFO(SQUARE s)
+		{
+			Move = true;
+			Square = s;
+		}
+		public MOVE_INFO(SQUARE s, Piece p, bool is_complete)
+		{
+			if (is_complete)
+			{
+				CompleteJump = true;
+			}
+			else
+			{
+				IncompleteJump = true;
+			}
+
+			Square = s;
+			CapturedPiece = p;
+		}
 	}
+
 	public abstract class Piece(IBoard board, SQUARE position, Image image)
 	{
 		protected IBoard board = board;
@@ -19,11 +45,11 @@ namespace damebot_engine
 		{
 			Position = next_position;
 		}
-		public abstract MOVE_TYPE GetMoveType(SQUARE original, SQUARE next);
-		public abstract bool CanCapture(SQUARE original);
+		public abstract MOVE_INFO GetMoveInfo(MOVE m, SQUARE next);
+		public abstract bool CanCapture(MOVE m);
 		public bool CanCapture()
 		{
-			return CanCapture(Position);
+			return CanCapture(new MOVE(Position));
 		}
 		public abstract bool CanBePromoted();
 		public abstract Piece Promote();
@@ -41,22 +67,27 @@ namespace damebot_engine
 			Piece? p = board[original | next];
 			return HasDifferentColour(p) && board[next] == null;
 		}
-		public sealed override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
+		public sealed override MOVE_INFO GetMoveInfo(MOVE m, SQUARE next)
 		{
-			SQUARE_DIFF difference = next - original;
+			SQUARE_DIFF difference = next - m.LastSquare;
 			if ((difference == (1, Forward) || difference == (-1, Forward))
 				&& board[next] == null)
 			{
-				return MOVE_TYPE.move;
+				return new MOVE_INFO(next);
 			}
 			else if ((difference == (2, DoubleForward) || difference == (-2, DoubleForward))
-				&& IsJumpPossible(original, next))
+				&& IsJumpPossible(m.LastSquare, next))
 			{
-				return MOVE_TYPE.jump;
+				Piece p = board[m.LastSquare | next]!;
+				MOVE simulated = new(m);
+				simulated.AddJump(next, p);
+
+				bool can_capture = CanCapture(simulated);
+				return new MOVE_INFO(next, p, !can_capture);
 			}
 			else
 			{
-				return MOVE_TYPE.invalid;
+				return new MOVE_INFO();
 			}
 		}
 		private bool CanCapture(SQUARE original, SQUARE_DIFF direction)
@@ -73,9 +104,9 @@ namespace damebot_engine
 				return false;
 			}
 		}
-		public sealed override bool CanCapture(SQUARE original)
+		public sealed override bool CanCapture(MOVE m)
 		{
-			return CanCapture(original, (1, Forward)) || CanCapture(original, (-1, Forward));
+			return CanCapture(m.LastSquare, (1, Forward)) || CanCapture(m.LastSquare, (-1, Forward));
 		}
 	}
 	class WhiteMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
@@ -121,12 +152,12 @@ namespace damebot_engine
 
 	abstract class KingBase(IBoard board, SQUARE position, Image image): Piece(board, position, image)
 	{
-		private bool CanCapture(SQUARE original, SQUARE_DIFF direction)
+		private bool CanCapture(MOVE m, SQUARE_DIFF direction)
 		{
-			for (SQUARE s = original + direction; s.IsOnBoard(board); s += direction)
+			for (SQUARE s = m.LastSquare + direction; s.IsOnBoard(board); s += direction)
 			{
 				Piece? p = board[s];
-				if (HasDifferentColour(p))
+				if (HasDifferentColour(p) && !m.CapturedPieces.Contains(p))
 				{
 					s += direction;
 					return s.IsOnBoard(board) && board[s] == null;
@@ -138,26 +169,26 @@ namespace damebot_engine
 			}
 			return false;
 		}
-		public sealed override bool CanCapture(SQUARE original)
+		public sealed override bool CanCapture(MOVE m)
 		{
-			return CanCapture(original, (1, 1)) || CanCapture(original, (-1, -1))
-				|| CanCapture(original, (1, -1)) || CanCapture(original, (-1, 1));
+			return CanCapture(m, (1, 1)) || CanCapture(m, (-1, -1))
+				|| CanCapture(m, (1, -1)) || CanCapture(m, (-1, 1));
 		}
-		public override MOVE_TYPE GetMoveType(SQUARE original, SQUARE next)
+		public override MOVE_INFO GetMoveInfo(MOVE m, SQUARE next)
 		{
-			SQUARE_DIFF difference = next - original;
+			SQUARE_DIFF difference = next - m.LastSquare;
 			if (difference.X != difference.Y && difference.X != -difference.Y)
 			{
-				return MOVE_TYPE.invalid;
+				return new MOVE_INFO();
 			}
 			else if (board[next] != null)
 			{
-				return MOVE_TYPE.invalid;
+				return new MOVE_INFO();
 			}
 
-			bool met_enemy_piece = false;
+			Piece? jumped_enemy_piece = null;
 			SQUARE_DIFF direction = difference.Normalise();
-			for (SQUARE s = original + direction; s != next; s += direction)
+			for (SQUARE s = m.LastSquare + direction; s != next; s += direction)
 			{
 				Piece? p = board[s];
 				if (p == null)
@@ -166,22 +197,33 @@ namespace damebot_engine
 				}
 				else if (HasDifferentColour(p))
 				{
-					if (met_enemy_piece)
+					if (jumped_enemy_piece != null)
 					{
-						return MOVE_TYPE.invalid;
+						return new MOVE_INFO();
 					}
 					else
 					{
-						met_enemy_piece = true;
+						jumped_enemy_piece = p;
 					}
 				}
 				else
 				{
-					return MOVE_TYPE.invalid;
+					return new MOVE_INFO();
 				}
 			}
 
-			return (met_enemy_piece) ? MOVE_TYPE.jump : MOVE_TYPE.move;
+			if (jumped_enemy_piece == null)
+			{
+				return new MOVE_INFO(next);
+			}
+			else
+			{
+				MOVE simulated = new(m);
+				simulated.AddJump(next, jumped_enemy_piece);
+
+				bool can_capture = CanCapture(simulated);
+				return new MOVE_INFO(next, jumped_enemy_piece, !can_capture);
+			}
 		}
 		public override bool CanBePromoted()
 		{

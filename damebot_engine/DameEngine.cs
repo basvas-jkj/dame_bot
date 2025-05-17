@@ -7,8 +7,8 @@ namespace damebot_engine
 	public interface IEngine
 	{
 		bool IsOnMovePiece(SQUARE position);
-		MOVE_TYPE ValidateMove(Piece piece, SQUARE original, SQUARE next);
-		void PerformMove(IReadOnlyList<SQUARE> move, bool jump);
+		MOVE_INFO ValidateMove(Piece piece, MOVE m, SQUARE next);
+		void PerformMove(MOVE m);
 
 		event MoveEvent? OnMove;
 	}
@@ -41,40 +41,31 @@ namespace damebot_engine
 				return Board[position] is BlackMan || Board[position] is BlackKing;
 			}
 		}
-		public MOVE_TYPE ValidateMove(Piece piece, SQUARE original, SQUARE next)
+		public MOVE_INFO ValidateMove(Piece piece, MOVE m, SQUARE next)
 		{
-			MOVE_TYPE type = piece.GetMoveType(original, next);
+			MOVE_INFO info = piece.GetMoveInfo(m, next);
 
-			if (type == MOVE_TYPE.jump)
+			if (info.CompleteJump || info.IncompleteJump)
 			{
-				return (piece.CanCapture(next)) ? MOVE_TYPE.incomplete_jump : MOVE_TYPE.jump;
+				return info;
 			}
-			if (type == MOVE_TYPE.move && !player_on_move.CanCapture())
+			if (info.Move && !player_on_move.CanCapture())
 			{
-				return MOVE_TYPE.move;
+				return info;
 			}
 			else
 			{
-				return MOVE_TYPE.invalid;
+				return new MOVE_INFO();
 			}
 		}
 
-		private void RemovePieces(IReadOnlyList<SQUARE> move)
+		public void PerformMove(MOVE m)
 		{
-			for (int fa = 0, fb = 1; fb < move.Count; fa += 1, fb += 1)
-			{
-				SQUARE s = move[fa] | move[fb];
-				waiting_player.RemovePiece(Board[s]!);
-				Board[s] = null;
-			}
-		}
-		public void PerformMove(IReadOnlyList<SQUARE> move, bool jump)
-		{
-			Debug.Assert(Board[move[0]] != null);
-			Debug.Assert(move.Count >= 2);
+			Debug.Assert(Board[m.Squares[0]] != null);
 
-			SQUARE original = move[0];
-			SQUARE next = move[^1];
+			IReadOnlyList<SQUARE> squares = m.Squares;
+			SQUARE original = squares[0];
+			SQUARE next = squares[^1];
 
 			Piece moved = Board[original]!;
 			Board[original] = null;
@@ -82,9 +73,10 @@ namespace damebot_engine
 
 			moved.Move(next);
 
-			if (jump)
+			foreach (Piece captured in m.CapturedPieces)
 			{
-				RemovePieces(move);
+				waiting_player.RemovePiece(captured);
+				Board[captured.Position] = null;
 			}
 			if (moved.CanBePromoted())
 			{
