@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace damebot_engine
 {
+	using EVALUATED_MOVE = (MOVE move, int evaluation);
+
 	public enum PLAYER_TYPE { min, max }
 	public interface IPlayer
 	{
@@ -9,19 +13,18 @@ namespace damebot_engine
 
 		void AddPiece(Piece p);
 		void RemovePiece(Piece p);
+		IPlayer Copy();
+
 		bool CanCapture();
-		MOVE FindNextMove(IBoard board);
+		MOVE FindNextMove(IBoard board, IPlayer other);
+		EVALUATED_MOVE FindNextMove(IBoard board, IPlayer other, int depth);
 		IReadOnlyList<Piece> GetPieces();
 	}
-	public class Player: IPlayer
+	public class Player(bool automatic, PLAYER_TYPE type): IPlayer
 	{
-		public bool Automatic { get; }
-		protected List<Piece> pieces = new();
-
-		public Player(bool automatic, PLAYER_TYPE type)
-		{
-			Automatic = automatic;
-		}
+		public bool Automatic { get; } = automatic;
+		readonly PLAYER_TYPE type = type;
+		List<Piece> pieces = new();
 
 		public IReadOnlyList<Piece> GetPieces()
 		{
@@ -36,16 +39,28 @@ namespace damebot_engine
 			pieces.Remove(p);
 		}
 
-		public bool CanCapture()
+		public IPlayer Copy()
 		{
-			foreach (Piece p in pieces)
+			return new Player(Automatic, type)
 			{
-				if (p.CanCapture())
-				{
-					return true;
-				}
+				pieces = new List<Piece>(pieces)
+			};
+		}
+
+		int InitialEvaluation()
+		{
+			return (type == PLAYER_TYPE.min) ? 1000 : -1000;
+		}
+		int CompareEvaluations(int original_evaluation, int new_evaluation)
+		{
+			if (type == PLAYER_TYPE.min)
+			{
+				return original_evaluation - new_evaluation;
 			}
-			return false;
+			else
+			{
+				return new_evaluation - original_evaluation;
+			}
 		}
 		IEnumerable<MOVE> EnumerateAllMoves()
 		{
@@ -67,18 +82,81 @@ namespace damebot_engine
 				}
 			}
 		}
-		public MOVE FindNextMove(IBoard board)
+		public bool CanCapture()
+		{
+			foreach (Piece p in pieces)
+			{
+				if (p.CanCapture())
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		public MOVE FindNextMove(IBoard board, IPlayer other)
+		{
+			Debug.WriteLine("------------------------------------------");
+			return FindNextMove(board, other, 1).move;
+		}
+
+		const int max_depth = 4;
+		public EVALUATED_MOVE FindNextMove(IBoard board, IPlayer other, int depth)
 		{
 			IEnumerable<MOVE> moves = CanCapture() ? EnumerateAllJumps() : EnumerateAllMoves();
 
-			MOVE mm = new();
+			int evaluation = InitialEvaluation();
+			List<MOVE> best_moves = new();
 			foreach (MOVE m in moves)
 			{
-				IBoard simulated = board.SimulateMove(m);
-				mm = m;
-				System.Diagnostics.Debug.WriteLine(simulated.SimulateMove(m).EvaluatePosition());
+				int new_evaluation = EvaluateMove(board, other, depth, m);
+				int result = CompareEvaluations(evaluation, new_evaluation);
+
+				if (result < 0)
+				{
+					continue;
+				}
+				else if (result > 0)
+				{
+					evaluation = new_evaluation;
+					best_moves = [m];
+				}
+				else
+				{
+					best_moves.Add(m);
+				}
 			}
-			return mm;
+
+			Random generator = new();
+			int random = generator.Next(best_moves.Count);
+			return (best_moves[random], evaluation);
+		}
+		int EvaluateMove(IBoard board, IPlayer other, int depth, MOVE m)
+		{
+			Piece moving = board[m.Squares[0]]!;
+			(IBoard simulated, Piece moved) = board.SimulateMove(m);
+			Debug.WriteLine(depth);
+			Debug.WriteLine(simulated);
+
+			if (depth == max_depth)
+			{
+				return simulated.EvaluatePosition();
+			}
+			else
+			{
+				Player me = (Player)this.Copy();
+				me.RemovePiece(moving);
+				me.AddPiece(moved);
+
+				Player you = (Player)other.Copy();
+				foreach (Piece captured in m.CapturedPieces)
+				{
+					you.RemovePiece(captured);
+				}
+
+				return you.FindNextMove(simulated, me, depth + 1).evaluation;
+			}
+
+
 		}
 	}
 }
