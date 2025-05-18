@@ -13,13 +13,17 @@ namespace damebot
 		static readonly Color dark = Color.FromArgb(172, 113, 30);
 		static readonly Color light = Color.FromArgb(255, 255, 240);
 		static readonly Color selected = Color.FromArgb(255, 0, 0);
-		static readonly Color marked = Color.FromArgb(255, 0, 0);
+		static readonly Color marked = Color.FromArgb(0, 159, 255);
 
 		private SolidBrush SelectColour(SQUARE square)
 		{
 			if (selected_squares?.Contains(square) == true)
 			{
 				return new SolidBrush(selected);
+			}
+			else if (marked_squares?.Contains(square) == true)
+			{
+				return new SolidBrush(marked);
 			}
 			else if ((square.X + square.Y) % 2 == 0)
 			{
@@ -52,6 +56,7 @@ namespace damebot
 		IPlayer black;
 		IEngine engine;
 		IReadOnlyList<SQUARE>? selected_squares;
+		IReadOnlyList<SQUARE>? marked_squares;
 		MOVE current_move;
 		bool wait_for_computer;
 
@@ -67,6 +72,7 @@ namespace damebot
 			board.GenerateInitialPieces(white, black);
 			engine = new DameEngine(board, white, black);
 			engine.OnMove += OnMoveHandler;
+			engine.OnMark += OnMarkHandler;
 			wait_for_computer = computer_black_radio.Checked;
 
 			Draw();
@@ -116,8 +122,8 @@ namespace damebot
 				return;
 			}
 
+			marked_squares = null;
 			engine.PerformMove(current_move);
-			ResetMove();
 		}
 		void ResetMove()
 		{
@@ -171,6 +177,11 @@ namespace damebot
 		{
 			wait_for_computer = (next_player == null);
 			Draw();
+		}
+		private void OnMarkHandler(MOVE m)
+		{
+			marked_squares = m.Squares;
+			ResetMove();
 		}
 		private void board_panel_Paint(object sender, PaintEventArgs e)
 		{

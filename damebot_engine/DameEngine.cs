@@ -3,6 +3,7 @@
 namespace damebot_engine
 {
 	public delegate void MoveEvent(IPlayer? next_player);
+	public delegate void MarkEvent(MOVE m);
 	public interface IEngine
 	{
 		bool IsOnMovePiece(SQUARE position);
@@ -10,6 +11,7 @@ namespace damebot_engine
 		void PerformMove(MOVE m);
 
 		event MoveEvent? OnMove;
+		event MarkEvent? OnMark;
 	}
 	public class DameEngine(IBoard board, IPlayer white, IPlayer black): IEngine
 	{
@@ -28,6 +30,7 @@ namespace damebot_engine
 		}
 
 		public event MoveEvent? OnMove;
+		public event MarkEvent? OnMark;
 
 		public bool IsOnMovePiece(SQUARE position)
 		{
@@ -86,7 +89,10 @@ namespace damebot_engine
 			if (player_on_move.Automatic)
 			{
 				OnMove?.Invoke(null);
-				PerformMove(player_on_move.FindNextMove(Board, waiting_player));
+
+				MOVE generated = player_on_move.FindNextMove(Board, waiting_player);
+				OnMark?.Invoke(generated);
+				PerformMove(generated);
 			}
 			else
 			{
