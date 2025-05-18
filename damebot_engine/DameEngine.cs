@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace damebot_engine
 {
@@ -90,13 +91,21 @@ namespace damebot_engine
 			{
 				OnMove?.Invoke(null);
 
-				MOVE generated = player_on_move.FindNextMove(Board, waiting_player);
-				OnMark?.Invoke(generated);
-				PerformMove(generated);
+				var v = TaskScheduler.FromCurrentSynchronizationContext();
+				player_on_move.FindNextMove(Board, waiting_player)
+					.ContinueWith(PerformAutomaticMove);
+
 			}
 			else
 			{
 				OnMove?.Invoke(player_on_move);
+				OnMark?.Invoke(new MOVE());
+			}
+
+			void PerformAutomaticMove(Task<MOVE> generated)
+			{
+				PerformMove(generated.Result);
+				OnMark?.Invoke(generated.Result);
 			}
 		}
 	}

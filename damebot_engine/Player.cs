@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace damebot_engine
 {
 	using EVALUATED_MOVE = (MOVE move, int evaluation);
+	using MOVE_TASK = (MOVE move, Task<int> evaluation_task);
 
 	public enum PLAYER_TYPE { min, max }
 	public interface IPlayer
@@ -16,8 +18,7 @@ namespace damebot_engine
 		IPlayer Copy();
 
 		bool CanCapture(IBoard board);
-		MOVE FindNextMove(IBoard board, IPlayer other);
-		EVALUATED_MOVE FindNextMove(IBoard board, IPlayer other, int depth);
+		Task<MOVE> FindNextMove(IBoard board, IPlayer other);
 		IReadOnlyList<Piece> GetPieces();
 	}
 	public class Player(bool automatic, PLAYER_TYPE type): IPlayer
@@ -93,44 +94,52 @@ namespace damebot_engine
 			}
 			return false;
 		}
-		public MOVE FindNextMove(IBoard board, IPlayer other)
+		public async Task<MOVE> FindNextMove(IBoard board, IPlayer other)
 		{
 			Debug.WriteLine("======================================");
-			return FindNextMove(board, other, 1).move;
+			EVALUATED_MOVE evaluation = await FindNextMove(board, other, 1);
+			return evaluation.move;
 		}
 
-		const int max_depth = 4;
-		public EVALUATED_MOVE FindNextMove(IBoard board, IPlayer other, int depth)
+		const int max_depth = 2;
+		async public Task<EVALUATED_MOVE> FindNextMove(IBoard board, IPlayer other, int depth)
 		{
+			List<MOVE_TASK> tasks = new();
 			IEnumerable<MOVE> moves = CanCapture(board) ? EnumerateAllJumps(board) : EnumerateAllMoves(board);
 
-			int evaluation = InitialEvaluation();
-			List<MOVE> best_moves = new();
 			foreach (MOVE m in moves)
 			{
-				int new_evaluation = EvaluateMove(board, other, depth, m);
-				int result = CompareEvaluations(evaluation, new_evaluation);
+				Task<int> t = EvaluateMove(board, other, depth, m);
+				tasks.Add((m, t));
+			}
 
-				if (result < 0)
+			int best_evaluation = InitialEvaluation();
+			List<MOVE> best_moves = new();
+			foreach ((MOVE move, Task<int> evaluation_task) in tasks)
+			{
+				int evaluation = await evaluation_task;
+				int comparison = CompareEvaluations(best_evaluation, evaluation);
+
+				if (comparison < 0)
 				{
 					continue;
 				}
-				else if (result > 0)
+				else if (comparison > 0)
 				{
-					evaluation = new_evaluation;
-					best_moves = [m];
+					best_evaluation = evaluation;
+					best_moves = [move];
 				}
 				else
 				{
-					best_moves.Add(m);
+					best_moves.Add(move);
 				}
 			}
 
 			Random generator = new();
 			int random = generator.Next(best_moves.Count);
-			return (best_moves[random], evaluation);
+			return (best_moves[random], best_evaluation);
 		}
-		int EvaluateMove(IBoard board, IPlayer other, int depth, MOVE m)
+		async Task<int> EvaluateMove(IBoard board, IPlayer other, int depth, MOVE m)
 		{
 			Piece moving = board[m.Squares[0]]!;
 			(IBoard simulated, Piece moved) = board.SimulateMove(m);
@@ -143,7 +152,7 @@ namespace damebot_engine
 			}
 			else
 			{
-				Player me = (Player)this.Copy();
+				Player me = (Player)Copy();
 				me.RemovePiece(moving);
 				me.AddPiece(moved);
 
@@ -153,10 +162,9 @@ namespace damebot_engine
 					you.RemovePiece(captured);
 				}
 
-				return you.FindNextMove(simulated, me, depth + 1).evaluation;
+				EVALUATED_MOVE move = await you.FindNextMove(simulated, me, depth + 1);
+				return move.evaluation;
 			}
-
-
 		}
 	}
 }
