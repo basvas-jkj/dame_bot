@@ -54,12 +54,12 @@ namespace damebot_engine
 				Piece piece;
 				if (position.Y < Size / 2)
 				{
-					piece = new WhiteMan(this, position);
+					piece = new WhiteMan(position);
 					white.AddPiece(piece);
 				}
 				else
 				{
-					piece = new BlackMan(this, position);
+					piece = new BlackMan(position);
 					black.AddPiece(piece);
 				}
 

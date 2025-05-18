@@ -42,13 +42,13 @@ namespace damebot_engine
 		}
 		public MOVE_INFO ValidateMove(Piece piece, MOVE m, SQUARE next)
 		{
-			MOVE_INFO info = piece.GetMoveInfo(m, next);
+			MOVE_INFO info = piece.GetMoveInfo(Board, m, next);
 
 			if (info.CompleteJump || info.IncompleteJump)
 			{
 				return info;
 			}
-			if (info.Move && !player_on_move.CanCapture())
+			if (info.Move && !player_on_move.CanCapture(Board))
 			{
 				return info;
 			}
@@ -71,7 +71,7 @@ namespace damebot_engine
 				Board.RemovePiece(captured);
 			}
 
-			if (moved.CanBePromoted())
+			if (moved.CanBePromoted(Board))
 			{
 				Board.RemovePiece(moved);
 				moved = moved.Promote();

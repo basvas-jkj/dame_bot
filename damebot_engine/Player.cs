@@ -15,7 +15,7 @@ namespace damebot_engine
 		void RemovePiece(Piece p);
 		IPlayer Copy();
 
-		bool CanCapture();
+		bool CanCapture(IBoard board);
 		MOVE FindNextMove(IBoard board, IPlayer other);
 		EVALUATED_MOVE FindNextMove(IBoard board, IPlayer other, int depth);
 		IReadOnlyList<Piece> GetPieces();
@@ -62,31 +62,31 @@ namespace damebot_engine
 				return new_evaluation - original_evaluation;
 			}
 		}
-		IEnumerable<MOVE> EnumerateAllMoves()
+		IEnumerable<MOVE> EnumerateAllMoves(IBoard board)
 		{
 			foreach (Piece p in pieces)
 			{
-				foreach (MOVE m in p.EnumerateMoves(new MOVE(p.Position)))
+				foreach (MOVE m in p.EnumerateMoves(board, new MOVE(p.Position)))
 				{
 					yield return m;
 				}
 			}
 		}
-		IEnumerable<MOVE> EnumerateAllJumps()
+		IEnumerable<MOVE> EnumerateAllJumps(IBoard board)
 		{
 			foreach (Piece p in pieces)
 			{
-				foreach (MOVE m in p.EnumerateJumps(new MOVE(p.Position)))
+				foreach (MOVE m in p.EnumerateJumps(board, new MOVE(p.Position)))
 				{
 					yield return m;
 				}
 			}
 		}
-		public bool CanCapture()
+		public bool CanCapture(IBoard board)
 		{
 			foreach (Piece p in pieces)
 			{
-				if (p.CanCapture())
+				if (p.CanCapture(board))
 				{
 					return true;
 				}
@@ -95,14 +95,14 @@ namespace damebot_engine
 		}
 		public MOVE FindNextMove(IBoard board, IPlayer other)
 		{
-			Debug.WriteLine("------------------------------------------");
+			Debug.WriteLine("======================================");
 			return FindNextMove(board, other, 1).move;
 		}
 
 		const int max_depth = 4;
 		public EVALUATED_MOVE FindNextMove(IBoard board, IPlayer other, int depth)
 		{
-			IEnumerable<MOVE> moves = CanCapture() ? EnumerateAllJumps() : EnumerateAllMoves();
+			IEnumerable<MOVE> moves = CanCapture(board) ? EnumerateAllJumps(board) : EnumerateAllMoves(board);
 
 			int evaluation = InitialEvaluation();
 			List<MOVE> best_moves = new();
