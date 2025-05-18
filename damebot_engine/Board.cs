@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 namespace damebot_engine
 {
+	using SIMULATED_MOVE = (IBoard board, Piece moved);
+
 	public interface IBoard
 	{
 		int Size { get; }
@@ -10,7 +13,7 @@ namespace damebot_engine
 
 		void GenerateInitialPieces(IPlayer white, IPlayer black);
 		Piece PerformMove(MOVE m);
-		IBoard SimulateMove(MOVE m);
+		SIMULATED_MOVE SimulateMove(MOVE m);
 		int EvaluatePosition();
 
 		void AddPiece(Piece added_piece);
@@ -86,10 +89,11 @@ namespace damebot_engine
 
 			return moved;
 		}
-		public IBoard SimulateMove(MOVE m)
+		public SIMULATED_MOVE SimulateMove(MOVE m)
 		{
 			DefaultBoard simulated = new(this);
-			return simulated;
+			Piece moved = simulated.PerformMove(m);
+			return (simulated, moved);
 		}
 
 		public void AddPiece(Piece added_piece)
@@ -100,6 +104,24 @@ namespace damebot_engine
 		public void RemovePiece(Piece removed_piece)
 		{
 			this[removed_piece.Position] = null;
+		}
+
+		public override string ToString()
+		{
+			StringBuilder sb = new("----------\n");
+
+			for (int fa = Size - 1; fa >= 0; fa -= 1)
+			{
+				sb.Append("|");
+				for (int fb = 0; fb < Size; fb += 1)
+				{
+					sb.Append(board[fb, fa]?.ToString() ?? " ");
+				}
+				sb.AppendLine("|");
+			}
+
+			sb.AppendLine("----------");
+			return sb.ToString();
 		}
 	}
 }
