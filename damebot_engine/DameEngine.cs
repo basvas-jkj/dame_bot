@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace damebot_engine
 {
-	public delegate void MoveEvent();
+	public delegate void MoveEvent(IPlayer? next_player);
 	public interface IEngine
 	{
 		bool IsOnMovePiece(SQUARE position);
@@ -12,14 +12,14 @@ namespace damebot_engine
 
 		event MoveEvent? OnMove;
 	}
-	public class DameEngine(IBoard board, Player white, Player black): IEngine
+	public class DameEngine(IBoard board, IPlayer white, IPlayer black): IEngine
 	{
 		public IBoard Board { get; } = board;
-		public Player White { get; } = white;
-		public Player Black { get; } = black;
+		public IPlayer White { get; } = white;
+		public IPlayer Black { get; } = black;
 
-		private Player player_on_move = white;
-		private Player waiting_player
+		private IPlayer player_on_move = white;
+		private IPlayer waiting_player
 		{
 			get => (player_on_move == White) ? Black : White;
 		}
@@ -87,7 +87,17 @@ namespace damebot_engine
 			}
 
 			SwitchPlayers();
-			OnMove?.Invoke();
+			IPlayer next_player = player_on_move;
+
+			if (next_player.Automatic)
+			{
+				OnMove?.Invoke(null);
+				PerformMove(next_player.FindNextMove(Board));
+			}
+			else
+			{
+				OnMove?.Invoke(next_player);
+			}
 		}
 	}
 }

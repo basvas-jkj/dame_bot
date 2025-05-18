@@ -2,9 +2,26 @@
 
 namespace damebot_engine
 {
-	public abstract class Player
+	public enum PLAYER_TYPE { min, max }
+	public interface IPlayer
 	{
+		bool Automatic { get; }
+
+		void AddPiece(Piece p);
+		void RemovePiece(Piece p);
+		bool CanCapture();
+		MOVE FindNextMove(IBoard board);
+		IReadOnlyList<Piece> GetPieces();
+	}
+	public class Player: IPlayer
+	{
+		public bool Automatic { get; }
 		protected List<Piece> pieces = new();
+
+		public Player(bool automatic, PLAYER_TYPE type)
+		{
+			Automatic = automatic;
+		}
 
 		public IReadOnlyList<Piece> GetPieces()
 		{
@@ -30,11 +47,38 @@ namespace damebot_engine
 			}
 			return false;
 		}
+		IEnumerable<MOVE> EnumerateAllMoves()
+		{
+			foreach (Piece p in pieces)
+			{
+				foreach (MOVE m in p.EnumerateMoves(new MOVE(p.Position)))
+				{
+					yield return m;
+				}
+			}
+		}
+		IEnumerable<MOVE> EnumerateAllJumps()
+		{
+			foreach (Piece p in pieces)
+			{
+				foreach (MOVE m in p.EnumerateJumps(new MOVE(p.Position)))
+				{
+					yield return m;
+				}
+			}
+		}
+		public MOVE FindNextMove(IBoard board)
+		{
+			IEnumerable<MOVE> moves = CanCapture() ? EnumerateAllJumps() : EnumerateAllMoves();
+
+			MOVE mm = new();
+			foreach (MOVE m in moves)
+			{
+				IBoard simulated = board.SimulateMove(m);
+				mm = m;
+				System.Diagnostics.Debug.WriteLine(simulated.SimulateMove(m).EvaluatePosition());
+			}
+			return mm;
+		}
 	}
-	public class RealPlayer: Player
-	{ }
-	public class AutomaticPlayer: Player
-	{ }
-	public class DamebotDefaultPlayer: AutomaticPlayer
-	{ }
 }

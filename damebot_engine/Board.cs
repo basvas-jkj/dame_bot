@@ -7,7 +7,7 @@ namespace damebot_engine
 		int Size { get; }
 		Piece? this[SQUARE position] { get; set; }
 
-		void GenerateInitialPieces(Player white, Player black);
+		void GenerateInitialPieces(IPlayer white, IPlayer black);
 	}
 	public class DefaultBoard: IBoard
 	{
@@ -33,7 +33,7 @@ namespace damebot_engine
 				yield return new SQUARE(f, Size + f % 2 - 2);
 			}
 		}
-		public void GenerateInitialPieces(Player white, Player black)
+		public void GenerateInitialPieces(IPlayer white, IPlayer black)
 		{
 			foreach (SQUARE position in GenerateInitialPositions())
 			{
