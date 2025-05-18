@@ -82,16 +82,15 @@ namespace damebot_engine
 			player_on_move.AddPiece(moved);
 
 			SwitchPlayers();
-			IPlayer next_player = player_on_move;
 
-			if (next_player.Automatic)
+			if (player_on_move.Automatic)
 			{
 				OnMove?.Invoke(null);
-				PerformMove(next_player.FindNextMove(Board));
+				PerformMove(player_on_move.FindNextMove(Board, waiting_player));
 			}
 			else
 			{
-				OnMove?.Invoke(next_player);
+				OnMove?.Invoke(player_on_move);
 			}
 		}
 	}
