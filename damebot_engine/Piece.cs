@@ -36,16 +36,16 @@ namespace damebot_engine
 		}
 	}
 
-	public abstract class Piece(IBoard board, SQUARE position, Image image)
+	public abstract record class Piece(IBoard board, SQUARE Position, Image Image)
 	{
 		protected IBoard board = board;
-		public Image image { get; } = image;
-		public SQUARE Position { get; private set; } = position;
+		public Image Image { get; } = Image;
+		public SQUARE Position { get; private init; } = Position;
 		public abstract int Value { get; }
 
-		public void Move(SQUARE next_position)
+		public Piece Move(SQUARE next_position)
 		{
-			Position = next_position;
+			return this with { Position = next_position };
 		}
 		public abstract MOVE_INFO GetMoveInfo(MOVE m, SQUARE next);
 		public abstract bool CanCapture(MOVE m);
@@ -61,7 +61,7 @@ namespace damebot_engine
 		protected abstract bool HasDifferentColour(Piece? other);
 	}
 
-	abstract class ManBase(IBoard board, SQUARE position, Image image): Piece(board, position, image)
+	abstract record class ManBase(IBoard board, SQUARE position, Image image): Piece(board, position, image)
 	{
 		protected abstract int Forward { get; }
 		protected abstract int DoubleForward { get; }
@@ -163,7 +163,7 @@ namespace damebot_engine
 			}
 		}
 	}
-	class WhiteMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
+	record class WhiteMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/white_man.png");
 		public override int Value { get => 1; }
@@ -184,7 +184,7 @@ namespace damebot_engine
 			return other is BlackMan || other is BlackKing;
 		}
 	}
-	class BlackMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
+	record class BlackMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/black_man.png");
 		public override int Value { get => -1; }
@@ -205,7 +205,7 @@ namespace damebot_engine
 		}
 	}
 
-	abstract class KingBase(IBoard board, SQUARE position, Image image): Piece(board, position, image)
+	abstract record class KingBase(IBoard board, SQUARE position, Image image): Piece(board, position, image)
 	{
 		private bool CanCapture(MOVE m, SQUARE_DIFF direction)
 		{
@@ -379,7 +379,7 @@ namespace damebot_engine
 			return posible_moves;
 		}
 	}
-	class WhiteKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
+	record class WhiteKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/white_king.png");
 		public override int Value { get => 4; }
@@ -389,7 +389,7 @@ namespace damebot_engine
 			return other is BlackMan || other is BlackKing;
 		}
 	}
-	class BlackKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
+	record class BlackKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/black_king.png");
 		public override int Value { get => -4; }

@@ -153,7 +153,7 @@ namespace damebot
 			foreach (Piece piece in all_pieces)
 			{
 				Rectangle rectangle = ComputeRectangle(piece.Position);
-				board_graphics.DrawImage(piece.image, rectangle);
+				board_graphics.DrawImage(piece.Image, rectangle);
 			}
 		}
 		private void Draw(Graphics board_graphics)

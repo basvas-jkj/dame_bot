@@ -9,7 +9,7 @@ namespace damebot_engine
 		Piece? this[SQUARE position] { get; }
 
 		void GenerateInitialPieces(IPlayer white, IPlayer black);
-		void PerformMove(MOVE m);
+		Piece PerformMove(MOVE m);
 		IBoard SimulateMove(MOVE m);
 		int EvaluatePosition();
 
@@ -72,17 +72,19 @@ namespace damebot_engine
 			}
 			return value;
 		}
-		public void PerformMove(MOVE m)
+		public Piece PerformMove(MOVE m)
 		{
 			IReadOnlyList<SQUARE> squares = m.Squares;
 			SQUARE original = squares[0];
 			SQUARE next = squares[^1];
 
-			Piece moved = this[original]!;
+			Piece moving = this[original]!;
+			Piece moved = moving.Move(next);
+
 			this[original] = null;
 			this[next] = moved;
 
-			moved.Move(next);
+			return moved;
 		}
 		public IBoard SimulateMove(MOVE m)
 		{

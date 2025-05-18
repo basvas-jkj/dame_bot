@@ -62,8 +62,8 @@ namespace damebot_engine
 		{
 			Debug.Assert(Board[m.Squares[0]] != null);
 
-			Piece moved = Board[m.Squares[0]]!;
-			Board.PerformMove(m);
+			Piece moving = Board[m.Squares[0]]!;
+			Piece moved = Board.PerformMove(m);
 
 			foreach (Piece captured in m.CapturedPieces)
 			{
@@ -71,17 +71,15 @@ namespace damebot_engine
 				Board.RemovePiece(captured);
 			}
 
-			Debug.Assert(moved == Board[m.Squares[^1]]!);
 			if (moved.CanBePromoted())
 			{
-				Piece promoted = moved.Promote();
-
 				Board.RemovePiece(moved);
-				Board.AddPiece(promoted);
-
-				player_on_move.RemovePiece(moved);
-				player_on_move.AddPiece(promoted);
+				moved = moved.Promote();
+				Board.AddPiece(moved);
 			}
+
+			player_on_move.RemovePiece(moving);
+			player_on_move.AddPiece(moved);
 
 			SwitchPlayers();
 			IPlayer next_player = player_on_move;
