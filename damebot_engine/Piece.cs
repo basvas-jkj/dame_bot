@@ -38,7 +38,7 @@ namespace damebot_engine
 
 	public abstract record class Piece(IBoard board, SQUARE Position, Image Image)
 	{
-		protected IBoard board = board;
+		protected readonly IBoard board = board;
 		public Image Image { get; } = Image;
 		public SQUARE Position { get; private init; } = Position;
 		public abstract int Value { get; }
@@ -165,7 +165,7 @@ namespace damebot_engine
 	}
 	record class WhiteMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
-		static Image loaded_image = Image.FromFile("img/white_man.png");
+		static readonly Image loaded_image = Image.FromFile("img/white_man.png");
 		public override int Value { get => 1; }
 
 		public override bool CanBePromoted()
@@ -183,10 +183,15 @@ namespace damebot_engine
 		{
 			return other is BlackMan || other is BlackKing;
 		}
+
+		public override string ToString()
+		{
+			return "b";
+		}
 	}
 	record class BlackMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
-		static Image loaded_image = Image.FromFile("img/black_man.png");
+		static readonly Image loaded_image = Image.FromFile("img/black_man.png");
 		public override int Value { get => -1; }
 
 		public override bool CanBePromoted()
@@ -202,6 +207,11 @@ namespace damebot_engine
 		protected override bool HasDifferentColour(Piece? other)
 		{
 			return other is WhiteMan || other is WhiteKing;
+		}
+
+		public override string ToString()
+		{
+			return "č";
 		}
 	}
 
@@ -381,22 +391,32 @@ namespace damebot_engine
 	}
 	record class WhiteKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
-		static Image loaded_image = Image.FromFile("img/white_king.png");
+		static readonly Image loaded_image = Image.FromFile("img/white_king.png");
 		public override int Value { get => 4; }
 
 		protected override bool HasDifferentColour(Piece? other)
 		{
 			return other is BlackMan || other is BlackKing;
 		}
+
+		public override string ToString()
+		{
+			return "B";
+		}
 	}
 	record class BlackKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
-		static Image loaded_image = Image.FromFile("img/black_king.png");
+		static readonly Image loaded_image = Image.FromFile("img/black_king.png");
 		public override int Value { get => -4; }
 
 		protected override bool HasDifferentColour(Piece? other)
 		{
 			return other is WhiteMan || other is WhiteKing;
+		}
+
+		public override string ToString()
+		{
+			return "Č";
 		}
 	}
 }
