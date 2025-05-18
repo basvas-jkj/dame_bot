@@ -6,7 +6,7 @@ using System.Linq;
 namespace damebot_engine
 {
 	using SQUARE_DIFF = (int X, int Y);
-	public struct MOVE_INFO
+	public readonly struct MOVE_INFO
 	{
 		public bool IncompleteJump { get; } = false;
 		public bool CompleteJump { get; } = false;
@@ -41,6 +41,7 @@ namespace damebot_engine
 		protected IBoard board = board;
 		public Image image { get; } = image;
 		public SQUARE Position { get; private set; } = position;
+		public abstract int Value { get; }
 
 		public void Move(SQUARE next_position)
 		{
@@ -67,6 +68,9 @@ namespace damebot_engine
 
 		bool IsJumpPossible(SQUARE original, SQUARE next)
 		{
+			if (!next.IsOnBoard(board))
+				return false;
+
 			Piece? p = board[original | next];
 			return HasDifferentColour(p) && board[next] == null;
 		}
@@ -74,7 +78,7 @@ namespace damebot_engine
 		{
 			SQUARE_DIFF difference = next - m.LastSquare;
 			if ((difference == (1, Forward) || difference == (-1, Forward))
-				&& board[next] == null && next.IsOnBoard(board))
+				&& next.IsOnBoard(board) && board[next] == null)
 			{
 				return new MOVE_INFO(next);
 			}
@@ -140,15 +144,17 @@ namespace damebot_engine
 				SQUARE next = original + direction;
 				MOVE_INFO info = GetMoveInfo(m, next);
 
-				MOVE copy = new(m);
-				copy.AddJump(next, board[original | next]!);
 
 				if (info.CompleteJump)
 				{
+					MOVE copy = new(m);
+					copy.AddJump(next, board[original | next]!);
 					yield return copy;
 				}
 				else if (info.IncompleteJump)
 				{
+					MOVE copy = new(m);
+					copy.AddJump(next, board[original | next]!);
 					foreach (MOVE complete_move in EnumerateJumps(copy))
 					{
 						yield return complete_move;
@@ -160,6 +166,7 @@ namespace damebot_engine
 	class WhiteMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/white_man.png");
+		public override int Value { get => 1; }
 
 		public override bool CanBePromoted()
 		{
@@ -180,6 +187,7 @@ namespace damebot_engine
 	class BlackMan(IBoard board, SQUARE position): ManBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/black_man.png");
+		public override int Value { get => -1; }
 
 		public override bool CanBePromoted()
 		{
@@ -308,7 +316,18 @@ namespace damebot_engine
 			SQUARE original = m.Squares[^1];
 			SQUARE next = original + direction;
 
-			while (next.IsOnBoard(board))
+			while (next.IsOnBoard(board) && board[next] == null)
+			{
+				next += direction;
+			}
+
+			if (!next.IsOnBoard(board) || !HasDifferentColour(board[next]))
+			{
+				yield break;
+			}
+
+			next += direction;
+			while (next.IsOnBoard(board) && board[next] == null)
 			{
 				MOVE_INFO info = GetMoveInfo(m, next);
 				MOVE copy = new(m);
@@ -325,7 +344,7 @@ namespace damebot_engine
 						yield return complete_move;
 					}
 				}
-				else if (!info.Move)
+				else
 				{
 					yield break;
 				}
@@ -363,6 +382,7 @@ namespace damebot_engine
 	class WhiteKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/white_king.png");
+		public override int Value { get => 4; }
 
 		protected override bool HasDifferentColour(Piece? other)
 		{
@@ -372,6 +392,7 @@ namespace damebot_engine
 	class BlackKing(IBoard board, SQUARE position): KingBase(board, position, loaded_image)
 	{
 		static Image loaded_image = Image.FromFile("img/black_king.png");
+		public override int Value { get => -4; }
 
 		protected override bool HasDifferentColour(Piece? other)
 		{

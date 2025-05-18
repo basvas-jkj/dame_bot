@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace damebot_engine
 {
@@ -63,25 +62,23 @@ namespace damebot_engine
 		{
 			Debug.Assert(Board[m.Squares[0]] != null);
 
-			IReadOnlyList<SQUARE> squares = m.Squares;
-			SQUARE original = squares[0];
-			SQUARE next = squares[^1];
-
-			Piece moved = Board[original]!;
-			Board[original] = null;
-			Board[next] = moved;
-
-			moved.Move(next);
+			Piece moved = Board[m.Squares[0]]!;
+			Board.PerformMove(m);
 
 			foreach (Piece captured in m.CapturedPieces)
 			{
 				waiting_player.RemovePiece(captured);
-				Board[captured.Position] = null;
+				Board.RemovePiece(captured);
 			}
+
+			Debug.Assert(moved == Board[m.Squares[^1]]!);
 			if (moved.CanBePromoted())
 			{
 				Piece promoted = moved.Promote();
-				Board[next] = promoted;
+
+				Board.RemovePiece(moved);
+				Board.AddPiece(promoted);
+
 				player_on_move.RemovePiece(moved);
 				player_on_move.AddPiece(promoted);
 			}

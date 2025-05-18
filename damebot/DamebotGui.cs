@@ -48,16 +48,17 @@ namespace damebot
 		}
 
 		IBoard board;
-		Player white;
-		Player black;
+		IPlayer white;
+		IPlayer black;
 		IEngine engine;
 		IReadOnlyList<SQUARE>? selected_squares;
 		MOVE current_move;
+		bool wait_for_computer;
 
-		private void InitPlayers(bool white_computer, bool black_computer)
+		private void InitPlayers(bool white_is_computer, bool black_is_computer)
 		{
-			white = (white_computer) ? new DamebotDefaultPlayer() : new RealPlayer();
-			black = (black_computer) ? new DamebotDefaultPlayer() : new RealPlayer();
+			white = new Player(white_is_computer, PLAYER_TYPE.min);
+			black = new Player(black_is_computer, PLAYER_TYPE.max);
 		}
 		private void ResetGame()
 		{
@@ -66,6 +67,7 @@ namespace damebot
 			board.GenerateInitialPieces(white, black);
 			engine = new DameEngine(board, white, black);
 			engine.OnMove += OnMoveHandler;
+			wait_for_computer = computer_black_radio.Checked;
 
 			Draw();
 		}
@@ -165,8 +167,9 @@ namespace damebot
 		}
 		#endregion
 		#region event handlers
-		private void OnMoveHandler()
+		private void OnMoveHandler(IPlayer? next_player)
 		{
+			wait_for_computer = (next_player == null);
 			Draw();
 		}
 		private void board_panel_Paint(object sender, PaintEventArgs e)
@@ -175,6 +178,9 @@ namespace damebot
 		}
 		private void board_panel_MouseClick(object sender, MouseEventArgs e)
 		{
+			if (wait_for_computer)
+				return;
+
 			SQUARE square = LocationToSquare(e.Location);
 			if (selected_squares == null)
 			{
@@ -206,6 +212,9 @@ namespace damebot
 		}
 		private void board_panel_MouseLeave(object sender, EventArgs e)
 		{
+			if (wait_for_computer)
+				return;
+
 			ResetMove();
 		}
 		#endregion
