@@ -41,10 +41,17 @@ namespace damebot_engine
 
 		IEnumerable<SQUARE> GenerateInitialPositions()
 		{
-			for (int f = 0; f < Size; f += 1)
+			for (int f = 0; f < Size; f += 2)
 			{
-				yield return new SQUARE(f, f % 2);
-				yield return new SQUARE(f, Size + f % 2 - 2);
+				yield return new SQUARE(f, 0);
+				yield return new SQUARE(f, 2);
+				yield return new SQUARE(f, Size - 2);
+			}
+			for (int f = 1; f < Size; f += 2)
+			{
+				yield return new SQUARE(f, 1);
+				yield return new SQUARE(f, Size - 1);
+				yield return new SQUARE(f, Size - 3);
 			}
 		}
 		public void GenerateInitialPieces(IPlayer white, IPlayer black)
