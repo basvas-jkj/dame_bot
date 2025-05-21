@@ -5,417 +5,417 @@ using System.Linq;
 
 namespace damebot_engine
 {
-	using SQUARE_DIFF = (int X, int Y);
-	public readonly struct MOVE_INFO
-	{
-		public bool IncompleteJump { get; } = false;
-		public bool CompleteJump { get; } = false;
-		public bool Move { get; } = false;
+    using SQUARE_DIFF = (int X, int Y);
+    public readonly struct MOVE_INFO
+    {
+        public bool IncompleteJump { get; } = false;
+        public bool CompleteJump { get; } = false;
+        public bool Move { get; } = false;
 
-		public SQUARE Square { get; }
-		public Piece? CapturedPiece { get; } = null;
+        public SQUARE Square { get; }
+        public Piece? CapturedPiece { get; } = null;
 
-		public MOVE_INFO(SQUARE s)
-		{
-			Move = true;
-			Square = s;
-		}
-		public MOVE_INFO(SQUARE s, Piece p, bool is_complete)
-		{
-			if (is_complete)
-			{
-				CompleteJump = true;
-			}
-			else
-			{
-				IncompleteJump = true;
-			}
+        public MOVE_INFO(SQUARE s)
+        {
+            Move = true;
+            Square = s;
+        }
+        public MOVE_INFO(SQUARE s, Piece p, bool is_complete)
+        {
+            if (is_complete)
+            {
+                CompleteJump = true;
+            }
+            else
+            {
+                IncompleteJump = true;
+            }
 
-			Square = s;
-			CapturedPiece = p;
-		}
-	}
+            Square = s;
+            CapturedPiece = p;
+        }
+    }
 
-	public abstract record class Piece(SQUARE Position, Image Image)
-	{
-		public Image Image { get; } = Image;
-		public SQUARE Position { get; private init; } = Position;
-		public abstract int Value { get; }
+    public abstract record class Piece(SQUARE Position, Image Image)
+    {
+        public Image Image { get; } = Image;
+        public SQUARE Position { get; private init; } = Position;
+        public abstract int Value { get; }
 
-		public Piece Move(SQUARE next_position)
-		{
-			return this with { Position = next_position };
-		}
-		public abstract MOVE_INFO GetMoveInfo(IBoard board, MOVE m, SQUARE next);
-		public abstract bool CanCapture(IBoard board, MOVE m);
-		public bool CanCapture(IBoard board)
-		{
-			return CanCapture(board, new MOVE(Position));
-		}
-		public abstract bool CanBePromoted(IBoard board);
-		public abstract Piece Promote();
-		public abstract IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m);
-		public abstract IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m);
+        public Piece Move(SQUARE next_position)
+        {
+            return this with { Position = next_position };
+        }
+        public abstract MOVE_INFO GetMoveInfo(IBoard board, MOVE m, SQUARE next);
+        public abstract bool CanCapture(IBoard board, MOVE m);
+        public bool CanCapture(IBoard board)
+        {
+            return CanCapture(board, new MOVE(Position));
+        }
+        public abstract bool CanBePromoted(IBoard board);
+        public abstract Piece Promote();
+        public abstract IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m);
+        public abstract IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m);
 
-		protected abstract bool HasDifferentColour(Piece? other);
-	}
+        protected abstract bool HasDifferentColour(Piece? other);
+    }
 
-	abstract record class ManBase(SQUARE position, Image image): Piece(position, image)
-	{
-		protected abstract int Forward { get; }
-		protected abstract int DoubleForward { get; }
+    abstract record class ManBase(SQUARE position, Image image): Piece(position, image)
+    {
+        protected abstract int Forward { get; }
+        protected abstract int DoubleForward { get; }
 
-		bool IsJumpPossible(IBoard board, SQUARE original, SQUARE next)
-		{
-			if (!next.IsOnBoard(board))
-				return false;
+        bool IsJumpPossible(IBoard board, SQUARE original, SQUARE next)
+        {
+            if (!next.IsOnBoard(board))
+                return false;
 
-			Piece? p = board[original | next];
-			return HasDifferentColour(p) && board[next] == null;
-		}
-		public sealed override MOVE_INFO GetMoveInfo(IBoard board, MOVE m, SQUARE next)
-		{
-			SQUARE_DIFF difference = next - m.LastSquare;
-			if ((difference == (1, Forward) || difference == (-1, Forward))
-				&& next.IsOnBoard(board) && board[next] == null)
-			{
-				return new MOVE_INFO(next);
-			}
-			else if ((difference == (2, DoubleForward) || difference == (-2, DoubleForward))
-				&& IsJumpPossible(board, m.LastSquare, next))
-			{
-				Piece p = board[m.LastSquare | next]!;
-				MOVE simulated = new(m);
-				simulated.AddJump(next, p);
+            Piece? p = board[original | next];
+            return HasDifferentColour(p) && board[next] == null;
+        }
+        public sealed override MOVE_INFO GetMoveInfo(IBoard board, MOVE m, SQUARE next)
+        {
+            SQUARE_DIFF difference = next - m.LastSquare;
+            if ((difference == (1, Forward) || difference == (-1, Forward))
+                && next.IsOnBoard(board) && board[next] == null)
+            {
+                return new MOVE_INFO(next);
+            }
+            else if ((difference == (2, DoubleForward) || difference == (-2, DoubleForward))
+                && IsJumpPossible(board, m.LastSquare, next))
+            {
+                Piece p = board[m.LastSquare | next]!;
+                MOVE simulated = new(m);
+                simulated.AddJump(next, p);
 
-				bool can_capture = CanCapture(board, simulated);
-				return new MOVE_INFO(next, p, !can_capture);
-			}
-			else
-			{
-				return new MOVE_INFO();
-			}
-		}
-		bool CanCapture(IBoard board, SQUARE original, SQUARE_DIFF direction)
-		{
-			SQUARE obstacle = original + direction;
-			SQUARE destination = obstacle + direction;
+                bool can_capture = CanCapture(board, simulated);
+                return new MOVE_INFO(next, p, !can_capture);
+            }
+            else
+            {
+                return new MOVE_INFO();
+            }
+        }
+        bool CanCapture(IBoard board, SQUARE original, SQUARE_DIFF direction)
+        {
+            SQUARE obstacle = original + direction;
+            SQUARE destination = obstacle + direction;
 
-			if (obstacle.IsOnBoard(board) && destination.IsOnBoard(board))
-			{
-				return board[destination] == null && HasDifferentColour(board[obstacle]);
-			}
-			else
-			{
-				return false;
-			}
-		}
-		public sealed override bool CanCapture(IBoard board, MOVE m)
-		{
-			return CanCapture(board, m.LastSquare, (1, Forward)) || CanCapture(board, m.LastSquare, (-1, Forward));
-		}
+            if (obstacle.IsOnBoard(board) && destination.IsOnBoard(board))
+            {
+                return board[destination] == null && HasDifferentColour(board[obstacle]);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public sealed override bool CanCapture(IBoard board, MOVE m)
+        {
+            return CanCapture(board, m.LastSquare, (1, Forward)) || CanCapture(board, m.LastSquare, (-1, Forward));
+        }
 
-		public sealed override IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m)
-		{
-			SQUARE original = m.Squares[^1];
-			SQUARE_DIFF[] directions = [(1, Forward), (-1, Forward)];
+        public sealed override IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m)
+        {
+            SQUARE original = m.Squares[^1];
+            SQUARE_DIFF[] directions = [(1, Forward), (-1, Forward)];
 
-			foreach (SQUARE_DIFF direction in directions)
-			{
-				SQUARE next = original + direction;
-				MOVE_INFO info = GetMoveInfo(board, m, next);
+            foreach (SQUARE_DIFF direction in directions)
+            {
+                SQUARE next = original + direction;
+                MOVE_INFO info = GetMoveInfo(board, m, next);
 
-				if (info.Move)
-				{
-					MOVE copy = new(m);
-					copy.AddMove(next);
-					yield return copy;
-				}
-			}
-		}
-		public sealed override IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m)
-		{
-			SQUARE original = m.Squares[^1];
-			SQUARE_DIFF[] directions = [(2, DoubleForward), (-2, DoubleForward)];
+                if (info.Move)
+                {
+                    MOVE copy = new(m);
+                    copy.AddMove(next);
+                    yield return copy;
+                }
+            }
+        }
+        public sealed override IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m)
+        {
+            SQUARE original = m.Squares[^1];
+            SQUARE_DIFF[] directions = [(2, DoubleForward), (-2, DoubleForward)];
 
-			foreach (SQUARE_DIFF direction in directions)
-			{
-				SQUARE next = original + direction;
-				MOVE_INFO info = GetMoveInfo(board, m, next);
+            foreach (SQUARE_DIFF direction in directions)
+            {
+                SQUARE next = original + direction;
+                MOVE_INFO info = GetMoveInfo(board, m, next);
 
 
-				if (info.CompleteJump)
-				{
-					MOVE copy = new(m);
-					copy.AddJump(next, board[original | next]!);
-					yield return copy;
-				}
-				else if (info.IncompleteJump)
-				{
-					MOVE copy = new(m);
-					copy.AddJump(next, board[original | next]!);
-					foreach (MOVE complete_move in EnumerateJumps(board, copy))
-					{
-						yield return complete_move;
-					}
-				}
-			}
-		}
-	}
-	record class WhiteMan(SQUARE position): ManBase(position, loaded_image)
-	{
-		static readonly Image loaded_image = Image.FromFile("img/white_man.png");
-		public override int Value { get => 1; }
+                if (info.CompleteJump)
+                {
+                    MOVE copy = new(m);
+                    copy.AddJump(next, board[original | next]!);
+                    yield return copy;
+                }
+                else if (info.IncompleteJump)
+                {
+                    MOVE copy = new(m);
+                    copy.AddJump(next, board[original | next]!);
+                    foreach (MOVE complete_move in EnumerateJumps(board, copy))
+                    {
+                        yield return complete_move;
+                    }
+                }
+            }
+        }
+    }
+    record class WhiteMan(SQUARE position): ManBase(position, loaded_image)
+    {
+        static readonly Image loaded_image = Image.FromFile("img/white_man.png");
+        public override int Value { get => -1; }
 
-		public override bool CanBePromoted(IBoard board)
-		{
-			return Position.Y == board.Size - 1;
-		}
-		public override Piece Promote()
-		{
-			return new WhiteKing(Position);
-		}
-		protected override int Forward { get => 1; }
-		protected override int DoubleForward { get => 2 * Forward; }
+        public override bool CanBePromoted(IBoard board)
+        {
+            return Position.Y == board.Size - 1;
+        }
+        public override Piece Promote()
+        {
+            return new WhiteKing(Position);
+        }
+        protected override int Forward { get => 1; }
+        protected override int DoubleForward { get => 2 * Forward; }
 
-		protected override bool HasDifferentColour(Piece? other)
-		{
-			return other is BlackMan || other is BlackKing;
-		}
+        protected override bool HasDifferentColour(Piece? other)
+        {
+            return other is BlackMan || other is BlackKing;
+        }
 
-		public override string ToString()
-		{
-			return "b";
-		}
-	}
-	record class BlackMan(SQUARE position): ManBase(position, loaded_image)
-	{
-		static readonly Image loaded_image = Image.FromFile("img/black_man.png");
-		public override int Value { get => -1; }
+        public override string ToString()
+        {
+            return "b";
+        }
+    }
+    record class BlackMan(SQUARE position): ManBase(position, loaded_image)
+    {
+        static readonly Image loaded_image = Image.FromFile("img/black_man.png");
+        public override int Value { get => 1; }
 
-		public override bool CanBePromoted(IBoard board)
-		{
-			return Position.Y == 0;
-		}
-		public override Piece Promote()
-		{
-			return new BlackKing(Position);
-		}
-		protected override int Forward { get => -1; }
-		protected override int DoubleForward { get => 2 * Forward; }
-		protected override bool HasDifferentColour(Piece? other)
-		{
-			return other is WhiteMan || other is WhiteKing;
-		}
+        public override bool CanBePromoted(IBoard board)
+        {
+            return Position.Y == 0;
+        }
+        public override Piece Promote()
+        {
+            return new BlackKing(Position);
+        }
+        protected override int Forward { get => -1; }
+        protected override int DoubleForward { get => 2 * Forward; }
+        protected override bool HasDifferentColour(Piece? other)
+        {
+            return other is WhiteMan || other is WhiteKing;
+        }
 
-		public override string ToString()
-		{
-			return "č";
-		}
-	}
+        public override string ToString()
+        {
+            return "č";
+        }
+    }
 
-	abstract record class KingBase(SQUARE position, Image image): Piece(position, image)
-	{
-		private bool CanCapture(IBoard board, MOVE m, SQUARE_DIFF direction)
-		{
-			for (SQUARE s = m.LastSquare + direction; s.IsOnBoard(board); s += direction)
-			{
-				Piece? p = board[s];
-				if (HasDifferentColour(p) && !m.CapturedPieces.Contains(p))
-				{
-					s += direction;
-					return s.IsOnBoard(board) && board[s] == null;
-				}
-				else if (p != null)
-				{
-					return false;
-				}
-			}
-			return false;
-		}
-		public sealed override bool CanCapture(IBoard board, MOVE m)
-		{
-			return CanCapture(board, m, (1, 1)) || CanCapture(board, m, (-1, -1))
-				|| CanCapture(board, m, (1, -1)) || CanCapture(board, m, (-1, 1));
-		}
-		public override MOVE_INFO GetMoveInfo(IBoard board, MOVE m, SQUARE next)
-		{
-			SQUARE_DIFF difference = next - m.LastSquare;
-			if (difference.X != difference.Y && difference.X != -difference.Y)
-			{
-				return new MOVE_INFO();
-			}
-			else if (board[next] != null)
-			{
-				return new MOVE_INFO();
-			}
+    abstract record class KingBase(SQUARE position, Image image): Piece(position, image)
+    {
+        private bool CanCapture(IBoard board, MOVE m, SQUARE_DIFF direction)
+        {
+            for (SQUARE s = m.LastSquare + direction; s.IsOnBoard(board); s += direction)
+            {
+                Piece? p = board[s];
+                if (HasDifferentColour(p) && !m.CapturedPieces.Contains(p))
+                {
+                    s += direction;
+                    return s.IsOnBoard(board) && board[s] == null;
+                }
+                else if (p != null)
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+        public sealed override bool CanCapture(IBoard board, MOVE m)
+        {
+            return CanCapture(board, m, (1, 1)) || CanCapture(board, m, (-1, -1))
+                || CanCapture(board, m, (1, -1)) || CanCapture(board, m, (-1, 1));
+        }
+        public override MOVE_INFO GetMoveInfo(IBoard board, MOVE m, SQUARE next)
+        {
+            SQUARE_DIFF difference = next - m.LastSquare;
+            if (difference.X != difference.Y && difference.X != -difference.Y)
+            {
+                return new MOVE_INFO();
+            }
+            else if (board[next] != null)
+            {
+                return new MOVE_INFO();
+            }
 
-			Piece? jumped_enemy_piece = null;
-			SQUARE_DIFF direction = difference.Normalise();
-			for (SQUARE s = m.LastSquare + direction; s != next; s += direction)
-			{
-				Piece? p = board[s];
-				if (p == null)
-				{
-					continue;
-				}
-				else if (HasDifferentColour(p))
-				{
-					if (jumped_enemy_piece != null)
-					{
-						return new MOVE_INFO();
-					}
-					else
-					{
-						jumped_enemy_piece = p;
-					}
-				}
-				else
-				{
-					return new MOVE_INFO();
-				}
-			}
+            Piece? jumped_enemy_piece = null;
+            SQUARE_DIFF direction = difference.Normalise();
+            for (SQUARE s = m.LastSquare + direction; s != next; s += direction)
+            {
+                Piece? p = board[s];
+                if (p == null)
+                {
+                    continue;
+                }
+                else if (HasDifferentColour(p))
+                {
+                    if (jumped_enemy_piece != null)
+                    {
+                        return new MOVE_INFO();
+                    }
+                    else
+                    {
+                        jumped_enemy_piece = p;
+                    }
+                }
+                else
+                {
+                    return new MOVE_INFO();
+                }
+            }
 
-			if (jumped_enemy_piece == null)
-			{
-				return new MOVE_INFO(next);
-			}
-			else
-			{
-				MOVE simulated = new(m);
-				simulated.AddJump(next, jumped_enemy_piece);
+            if (jumped_enemy_piece == null)
+            {
+                return new MOVE_INFO(next);
+            }
+            else
+            {
+                MOVE simulated = new(m);
+                simulated.AddJump(next, jumped_enemy_piece);
 
-				bool can_capture = CanCapture(board, simulated);
-				return new MOVE_INFO(next, jumped_enemy_piece, !can_capture);
-			}
-		}
-		public override bool CanBePromoted(IBoard board)
-		{
-			return false;
-		}
-		public override Piece Promote()
-		{
-			throw new InvalidOperationException();
-		}
+                bool can_capture = CanCapture(board, simulated);
+                return new MOVE_INFO(next, jumped_enemy_piece, !can_capture);
+            }
+        }
+        public override bool CanBePromoted(IBoard board)
+        {
+            return false;
+        }
+        public override Piece Promote()
+        {
+            throw new InvalidOperationException();
+        }
 
-		IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m, SQUARE_DIFF direction)
-		{
-			SQUARE original = m.Squares[^1];
-			SQUARE next = original + direction;
+        IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m, SQUARE_DIFF direction)
+        {
+            SQUARE original = m.Squares[^1];
+            SQUARE next = original + direction;
 
-			while (next.IsOnBoard(board))
-			{
-				MOVE_INFO info = GetMoveInfo(board, m, next);
-				if (info.Move)
-				{
-					MOVE copy = new(m);
-					copy.AddMove(next);
-					yield return copy;
-				}
-				else
-				{
-					yield break;
-				}
+            while (next.IsOnBoard(board))
+            {
+                MOVE_INFO info = GetMoveInfo(board, m, next);
+                if (info.Move)
+                {
+                    MOVE copy = new(m);
+                    copy.AddMove(next);
+                    yield return copy;
+                }
+                else
+                {
+                    yield break;
+                }
 
-				next += direction;
-			}
-		}
-		IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m, SQUARE_DIFF direction)
-		{
-			SQUARE original = m.Squares[^1];
-			SQUARE next = original + direction;
+                next += direction;
+            }
+        }
+        IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m, SQUARE_DIFF direction)
+        {
+            SQUARE original = m.Squares[^1];
+            SQUARE next = original + direction;
 
-			while (next.IsOnBoard(board) && board[next] == null)
-			{
-				next += direction;
-			}
+            while (next.IsOnBoard(board) && board[next] == null)
+            {
+                next += direction;
+            }
 
-			if (!next.IsOnBoard(board) || !HasDifferentColour(board[next]))
-			{
-				yield break;
-			}
+            if (!next.IsOnBoard(board) || !HasDifferentColour(board[next]))
+            {
+                yield break;
+            }
 
-			next += direction;
-			while (next.IsOnBoard(board) && board[next] == null)
-			{
-				MOVE_INFO info = GetMoveInfo(board, m, next);
-				MOVE copy = new(m);
-				copy.AddJump(next, info.CapturedPiece!);
+            next += direction;
+            while (next.IsOnBoard(board) && board[next] == null)
+            {
+                MOVE_INFO info = GetMoveInfo(board, m, next);
+                MOVE copy = new(m);
+                copy.AddJump(next, info.CapturedPiece!);
 
-				if (info.CompleteJump)
-				{
-					yield return copy;
-				}
-				else if (info.IncompleteJump)
-				{
-					foreach (MOVE complete_move in EnumerateJumps(board, copy))
-					{
-						yield return complete_move;
-					}
-				}
-				else
-				{
-					yield break;
-				}
+                if (info.CompleteJump)
+                {
+                    yield return copy;
+                }
+                else if (info.IncompleteJump)
+                {
+                    foreach (MOVE complete_move in EnumerateJumps(board, copy))
+                    {
+                        yield return complete_move;
+                    }
+                }
+                else
+                {
+                    yield break;
+                }
 
-				next += direction;
-			}
-		}
-		public sealed override IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m)
-		{
-			IEnumerable<MOVE> posible_moves = [];
-			SQUARE_DIFF[] directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
+                next += direction;
+            }
+        }
+        public sealed override IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE m)
+        {
+            IEnumerable<MOVE> posible_moves = [];
+            SQUARE_DIFF[] directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
 
-			foreach (SQUARE_DIFF direction in directions)
-			{
-				IEnumerable<MOVE> enumerated_moves = EnumerateMoves(board, m, direction);
-				posible_moves = posible_moves.Concat(enumerated_moves);
-			}
+            foreach (SQUARE_DIFF direction in directions)
+            {
+                IEnumerable<MOVE> enumerated_moves = EnumerateMoves(board, m, direction);
+                posible_moves = posible_moves.Concat(enumerated_moves);
+            }
 
-			return posible_moves;
-		}
-		public sealed override IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m)
-		{
-			IEnumerable<MOVE> posible_moves = [];
-			SQUARE_DIFF[] directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
+            return posible_moves;
+        }
+        public sealed override IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE m)
+        {
+            IEnumerable<MOVE> posible_moves = [];
+            SQUARE_DIFF[] directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
 
-			foreach (SQUARE_DIFF direction in directions)
-			{
-				IEnumerable<MOVE> enumerated_moves = EnumerateJumps(board, m, direction);
-				posible_moves = posible_moves.Concat(enumerated_moves);
-			}
+            foreach (SQUARE_DIFF direction in directions)
+            {
+                IEnumerable<MOVE> enumerated_moves = EnumerateJumps(board, m, direction);
+                posible_moves = posible_moves.Concat(enumerated_moves);
+            }
 
-			return posible_moves;
-		}
-	}
-	record class WhiteKing(SQUARE position): KingBase(position, loaded_image)
-	{
-		static readonly Image loaded_image = Image.FromFile("img/white_king.png");
-		public override int Value { get => 4; }
+            return posible_moves;
+        }
+    }
+    record class WhiteKing(SQUARE position): KingBase(position, loaded_image)
+    {
+        static readonly Image loaded_image = Image.FromFile("img/white_king.png");
+        public override int Value { get => -5; }
 
-		protected override bool HasDifferentColour(Piece? other)
-		{
-			return other is BlackMan || other is BlackKing;
-		}
+        protected override bool HasDifferentColour(Piece? other)
+        {
+            return other is BlackMan || other is BlackKing;
+        }
 
-		public override string ToString()
-		{
-			return "B";
-		}
-	}
-	record class BlackKing(SQUARE position): KingBase(position, loaded_image)
-	{
-		static readonly Image loaded_image = Image.FromFile("img/black_king.png");
-		public override int Value { get => -4; }
+        public override string ToString()
+        {
+            return "B";
+        }
+    }
+    record class BlackKing(SQUARE position): KingBase(position, loaded_image)
+    {
+        static readonly Image loaded_image = Image.FromFile("img/black_king.png");
+        public override int Value { get => 5; }
 
-		protected override bool HasDifferentColour(Piece? other)
-		{
-			return other is WhiteMan || other is WhiteKing;
-		}
+        protected override bool HasDifferentColour(Piece? other)
+        {
+            return other is WhiteMan || other is WhiteKing;
+        }
 
-		public override string ToString()
-		{
-			return "Č";
-		}
-	}
+        public override string ToString()
+        {
+            return "Č";
+        }
+    }
 }
