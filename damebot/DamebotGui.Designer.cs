@@ -36,18 +36,19 @@ namespace damebot
             white_computer_radio = new RadioButton();
             computer_black_radio = new RadioButton();
             new_game_button = new Button();
+            background_panel = new Panel();
+            background_panel.SuspendLayout();
             SuspendLayout();
             // 
             // board_panel
             // 
-            board_panel.BorderStyle = BorderStyle.FixedSingle;
-            board_panel.Location = new Point(12, 12);
+            board_panel.Location = new Point(20, 20);
+            board_panel.Margin = new Padding(0);
             board_panel.Name = "board_panel";
-            board_panel.Size = new Size(426, 426);
+            board_panel.Size = new Size(386, 386);
             board_panel.TabIndex = 0;
             board_panel.Paint += board_panel_Paint;
             board_panel.MouseClick += board_panel_MouseClick;
-            board_panel.MouseLeave += board_panel_MouseLeave;
             // 
             // white_black_radio
             // 
@@ -99,18 +100,30 @@ namespace damebot
             new_game_button.UseVisualStyleBackColor = false;
             new_game_button.Click += new_game_button_Click;
             // 
+            // background_panel
+            // 
+            background_panel.BackColor = SystemColors.ControlDarkDark;
+            background_panel.Controls.Add(board_panel);
+            background_panel.Location = new Point(12, 12);
+            background_panel.Margin = new Padding(0);
+            background_panel.Name = "background_panel";
+            background_panel.Size = new Size(426, 426);
+            background_panel.TabIndex = 5;
+            background_panel.MouseLeave += background_panel_MouseLeave;
+            // 
             // DamebotGui
             // 
             AutoScaleDimensions = new SizeF(8F, 19F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(639, 450);
+            Controls.Add(background_panel);
             Controls.Add(new_game_button);
             Controls.Add(computer_black_radio);
             Controls.Add(white_computer_radio);
             Controls.Add(white_black_radio);
-            Controls.Add(board_panel);
             Name = "DamebotGui";
             Text = "Damebot - program na hraní dámy";
+            background_panel.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -122,5 +135,6 @@ namespace damebot
         private RadioButton white_computer_radio;
         private RadioButton computer_black_radio;
         private Button new_game_button;
+        private Panel background_panel;
     }
 }

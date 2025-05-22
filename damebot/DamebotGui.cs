@@ -86,10 +86,72 @@ namespace damebot
                 engine.PerformAutomaticMove();
             }
         }
+        private void GenerateEdgeLabels()
+        {
+            int lable_width = board_panel.Width / board.Size;
+            int lable_height = board_panel.Height / board.Size;
+            for (int f = 0; f < board.Size; f += 1)
+            {
+                string character = ((char)('a' + f)).ToString();
+                Label top = new()
+                {
+                    Width = lable_width,
+                    Height = board_panel.Top,
+                    Top = 0,
+                    Left = board_panel.Left + f * lable_width,
+                    Text = character,
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+                Label bottom = new()
+                {
+                    Width = lable_width,
+                    Height = board_panel.Top,
+                    Top = board_panel.Bottom,
+                    Left = board_panel.Left + f * lable_width,
+                    Text = character,
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+
+                top.MouseLeave += background_panel_MouseLeave;
+                bottom.MouseLeave += background_panel_MouseLeave;
+
+                background_panel.Controls.Add(top);
+                background_panel.Controls.Add(bottom);
+            }
+            for (int f = 0; f < board.Size; f += 1)
+            {
+                string number = (board.Size - f).ToString();
+                Label left = new()
+                {
+                    Width = board_panel.Left,
+                    Height = lable_height,
+                    Top = board_panel.Top + f * lable_height,
+                    Left = 0,
+                    Text = number,
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+                Label right = new()
+                {
+                    Width = board_panel.Left,
+                    Height = lable_height,
+                    Top = board_panel.Top + f * lable_height,
+                    Left = board_panel.Right,
+                    Text = number,
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+
+                left.MouseLeave += background_panel_MouseLeave;
+                right.MouseLeave += background_panel_MouseLeave;
+
+                background_panel.Controls.Add(left);
+                background_panel.Controls.Add(right);
+            }
+        }
         public DamebotGui()
         {
             InitializeComponent();
             ResetGame();
+            GenerateEdgeLabels();
         }
 
         #region move selection
@@ -249,7 +311,7 @@ namespace damebot
                 ResetGame();
             }
         }
-        private void board_panel_MouseLeave(object sender, EventArgs e)
+        private void background_panel_MouseLeave(object? sender, EventArgs e)
         {
             if (wait_for_computer)
                 return;
