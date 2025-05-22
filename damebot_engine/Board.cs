@@ -15,9 +15,6 @@ namespace damebot_engine
         Piece PerformMove(MOVE m);
         SIMULATED_MOVE SimulateMove(MOVE m);
         int EvaluatePosition();
-
-        void AddPiece(Piece added_piece);
-        void RemovePiece(Piece removed_piece);
     }
     public class DefaultBoard: IBoard
     {
@@ -93,6 +90,18 @@ namespace damebot_engine
 
             this[original] = null;
             this[next] = moved;
+
+            foreach (Piece captured in m.CapturedPieces)
+            {
+                RemovePiece(captured);
+            }
+
+            if (moved.CanBePromoted(this))
+            {
+                RemovePiece(moved);
+                moved = moved.Promote();
+                AddPiece(moved);
+            }
 
             return moved;
         }

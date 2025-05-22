@@ -198,6 +198,7 @@ namespace damebot
         }
         private void OnGameOverHandler(IPlayer p)
         {
+            ResetMove();
             string caption = string.Format("{0} zvítězil.", p.Name);
             DialogResult result = MessageBox.Show("Chceš zahájit novou hru?", caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
@@ -208,10 +209,6 @@ namespace damebot
             else if (result == DialogResult.No)
             {
                 Application.Exit();
-            }
-            else
-            {
-                ResetMove();
             }
         }
         private void board_panel_Paint(object sender, PaintEventArgs e)

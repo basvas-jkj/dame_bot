@@ -76,14 +76,6 @@ namespace damebot_engine
             foreach (Piece captured in m.CapturedPieces)
             {
                 waiting_player.RemovePiece(captured);
-                Board.RemovePiece(captured);
-            }
-
-            if (moved.CanBePromoted(Board))
-            {
-                Board.RemovePiece(moved);
-                moved = moved.Promote();
-                Board.AddPiece(moved);
             }
 
             player_on_move.RemovePiece(moving);
