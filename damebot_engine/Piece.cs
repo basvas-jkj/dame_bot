@@ -165,7 +165,7 @@ namespace damebot_engine
     record class WhiteMan(SQUARE position): ManBase(position, loaded_image)
     {
         static readonly Image loaded_image = Image.FromFile("img/white_man.png");
-        public override int Value { get => -1; }
+        public override int Value { get => 1; }
 
         public override bool CanBePromoted(IBoard board)
         {
@@ -191,7 +191,7 @@ namespace damebot_engine
     record class BlackMan(SQUARE position): ManBase(position, loaded_image)
     {
         static readonly Image loaded_image = Image.FromFile("img/black_man.png");
-        public override int Value { get => 1; }
+        public override int Value { get => -1; }
 
         public override bool CanBePromoted(IBoard board)
         {
@@ -391,7 +391,7 @@ namespace damebot_engine
     record class WhiteKing(SQUARE position): KingBase(position, loaded_image)
     {
         static readonly Image loaded_image = Image.FromFile("img/white_king.png");
-        public override int Value { get => -5; }
+        public override int Value { get => 5; }
 
         protected override bool HasDifferentColour(Piece? other)
         {
@@ -406,7 +406,7 @@ namespace damebot_engine
     record class BlackKing(SQUARE position): KingBase(position, loaded_image)
     {
         static readonly Image loaded_image = Image.FromFile("img/black_king.png");
-        public override int Value { get => 5; }
+        public override int Value { get => -5; }
 
         protected override bool HasDifferentColour(Piece? other)
         {

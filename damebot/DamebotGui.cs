@@ -62,8 +62,8 @@ namespace damebot
 
         private void InitPlayers(bool white_is_computer, bool black_is_computer)
         {
-            white = new Player(white_is_computer, PLAYER_TYPE.min, "Bílý");
-            black = new Player(black_is_computer, PLAYER_TYPE.max, "Černý");
+            white = new Player(white_is_computer, PLAYER_TYPE.max, "Bílý");
+            black = new Player(black_is_computer, PLAYER_TYPE.min, "Černý");
         }
         private void ResetGame()
         {

@@ -56,15 +56,15 @@ namespace damebot_engine
         {
             get => (type == PLAYER_TYPE.min) ? MinInitialEvaluation : MaxInitialEvaluation;
         }
-        int CompareEvaluations(int original_evaluation, int new_evaluation)
+        int SelectBetterEvaluation(int original_evaluation, int new_evaluation)
         {
             if (type == PLAYER_TYPE.min)
             {
-                return original_evaluation - new_evaluation;
+                return Math.Min(original_evaluation, new_evaluation);
             }
             else
             {
-                return new_evaluation - original_evaluation;
+                return Math.Max(original_evaluation, new_evaluation);
             }
         }
         IEnumerable<MOVE> EnumerateAllMoves(IBoard board)
@@ -121,21 +121,25 @@ namespace damebot_engine
             List<MOVE> best_moves = new();
             foreach ((MOVE move, Task<int> evaluation_task) in tasks)
             {
-                int evaluation = await evaluation_task;
-                int comparison = CompareEvaluations(best_evaluation, evaluation);
+                int new_evaluation = await evaluation_task;
+                int better = SelectBetterEvaluation(best_evaluation, new_evaluation);
 
-                if (comparison < 0)
+                if (better == best_evaluation && better == new_evaluation)
                 {
-                    continue;
+                    // new evaluation is same as the original best evaluation
+                    best_moves.Add(move);
                 }
-                else if (comparison > 0)
+                else if (better == new_evaluation)
                 {
-                    best_evaluation = evaluation;
+                    // new evaluation is better then the original best evaluation
+                    best_evaluation = new_evaluation;
                     best_moves = [move];
+                    continue;
                 }
                 else
                 {
-                    best_moves.Add(move);
+                    // the original evaluation is still the best
+                    continue;
                 }
             }
 
