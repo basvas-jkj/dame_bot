@@ -11,6 +11,7 @@ namespace damebot_engine
         bool IsOnMovePiece(SQUARE position);
         MOVE_INFO ValidateMove(Piece piece, MOVE m, SQUARE next);
         void PerformMove(MOVE m);
+        void PerformAutomaticMove();
 
         event MoveEvent? OnMove;
         event MarkEvent? OnMark;
@@ -97,32 +98,35 @@ namespace damebot_engine
             else if (player_on_move.Automatic)
             {
                 OnMove?.Invoke(null);
-
-                var v = TaskScheduler.FromCurrentSynchronizationContext();
-                player_on_move.FindNextMove(Board, waiting_player)
-                    .ContinueWith(PerformAutomaticMove);
+                PerformAutomaticMove();
             }
             else
             {
                 OnMove?.Invoke(player_on_move);
                 OnMark?.Invoke(new MOVE());
             }
+        }
 
-            void PerformAutomaticMove(Task<MOVE?> generated)
+        public void PerformAutomaticMove()
+        {
+            var v = TaskScheduler.FromCurrentSynchronizationContext();
+            player_on_move.FindNextMove(Board, waiting_player)
+                .ContinueWith(PerformAutomaticMove, v);
+        }
+        void PerformAutomaticMove(Task<MOVE?> generated)
+        {
+            if (generated.Exception != null)
             {
-                if (generated.Exception != null)
-                {
-                    Debug.WriteLine(generated.Exception);
-                }
-                else if (generated.Result != null)
-                {
-                    PerformMove(generated.Result.Value);
-                    OnMark?.Invoke(generated.Result.Value);
-                }
-                else
-                {
-                    OnGameOver?.Invoke(waiting_player);
-                }
+                Debug.WriteLine(generated.Exception);
+            }
+            else if (generated.Result != null)
+            {
+                PerformMove(generated.Result.Value);
+                OnMark?.Invoke(generated.Result.Value);
+            }
+            else
+            {
+                OnGameOver?.Invoke(waiting_player);
             }
         }
     }

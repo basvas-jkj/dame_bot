@@ -84,7 +84,7 @@ namespace damebot
 
             if (wait_for_computer)
             {
-
+                engine.PerformAutomaticMove();
             }
         }
         public DamebotGui()
