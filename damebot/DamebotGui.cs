@@ -62,9 +62,8 @@ namespace damebot
 
         private void InitPlayers(bool white_is_computer, bool black_is_computer)
         {
-            //black_is_computer = true;
-            white = new Player(white_is_computer, PLAYER_TYPE.min);
-            black = new Player(black_is_computer, PLAYER_TYPE.max);
+            white = new Player(white_is_computer, PLAYER_TYPE.min, "Bílý");
+            black = new Player(black_is_computer, PLAYER_TYPE.max, "Černý");
         }
         private void ResetGame()
         {
@@ -199,8 +198,21 @@ namespace damebot
         }
         private void OnGameOverHandler(IPlayer p)
         {
-            Debug.WriteLine("Bílý {0} Černý {1}", p == white, p == black);
-            ResetMove();
+            string caption = string.Format("{0} zvítězil.", p.Name);
+            DialogResult result = MessageBox.Show("Chceš zahájit novou hru?", caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                ResetGame();
+            }
+            else if (result == DialogResult.No)
+            {
+                Application.Exit();
+            }
+            else
+            {
+                ResetMove();
+            }
         }
         private void board_panel_Paint(object sender, PaintEventArgs e)
         {

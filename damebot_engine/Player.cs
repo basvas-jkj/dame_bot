@@ -11,6 +11,7 @@ namespace damebot_engine
     public interface IPlayer
     {
         bool Automatic { get; }
+        string Name { get; }
 
         void AddPiece(Piece p);
         void RemovePiece(Piece p);
@@ -20,9 +21,11 @@ namespace damebot_engine
         Task<MOVE?> FindNextMove(IBoard board, IPlayer other);
         IReadOnlyList<Piece> GetPieces();
     }
-    public class Player(bool automatic, PLAYER_TYPE type): IPlayer
+    public class Player(bool automatic, PLAYER_TYPE type, string name): IPlayer
     {
         public bool Automatic { get; } = automatic;
+        public string Name { get; } = name;
+
         readonly PLAYER_TYPE type = type;
         List<Piece> pieces = new();
 
@@ -41,7 +44,7 @@ namespace damebot_engine
 
         public IPlayer Copy()
         {
-            return new Player(Automatic, type)
+            return new Player(Automatic, type, Name)
             {
                 pieces = new List<Piece>(pieces)
             };
