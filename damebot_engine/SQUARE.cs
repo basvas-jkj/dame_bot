@@ -2,27 +2,26 @@
 
 namespace damebot_engine
 {
-    using SQUARE_DIFF = (int X, int Y);
-
+    using SQUARE_DIFF = (int Column, int Row);
     public static class SquareDiffExtension
     {
         public static SQUARE_DIFF Normalise(this SQUARE_DIFF diff)
         {
-            return (Math.Sign(diff.X), Math.Sign(diff.Y));
+            return (Math.Sign(diff.Column), Math.Sign(diff.Row));
         }
     }
-    public readonly struct SQUARE(int x, int y)
+    public readonly struct SQUARE(int column, int row)
     {
-        public int X { get; } = x;
-        public int Y { get; } = y;
+        public int Column { get; } = column;
+        public int Row { get; } = row;
         public bool IsOnBoard(IBoard board)
         {
-            return 0 <= X && X < board.Size && 0 <= Y && Y < board.Size;
+            return 0 <= Column && Column < board.Size && 0 <= Row && Row < board.Size;
         }
 
         public static bool operator ==(SQUARE a, SQUARE b)
         {
-            return a.X == b.X && a.Y == b.Y;
+            return a.Column == b.Column && a.Row == b.Row;
         }
         public static bool operator !=(SQUARE a, SQUARE b)
         {
@@ -30,16 +29,16 @@ namespace damebot_engine
         }
         public static SQUARE_DIFF operator -(SQUARE a, SQUARE b)
         {
-            return new SQUARE_DIFF(a.X - b.X, a.Y - b.Y);
+            return new SQUARE_DIFF(a.Column - b.Column, a.Row - b.Row);
         }
         public static SQUARE operator +(SQUARE a, SQUARE_DIFF b)
         {
-            return new SQUARE(a.X + b.X, a.Y + b.Y);
+            return new SQUARE(a.Column + b.Column, a.Row + b.Row);
         }
         public static SQUARE operator |(SQUARE a, SQUARE b)
         {
-            int new_x = (a.X + b.X) / 2;
-            int new_y = (a.Y + b.Y) / 2;
+            int new_x = (a.Column + b.Column) / 2;
+            int new_y = (a.Row + b.Row) / 2;
             return new SQUARE(new_x, new_y);
         }
 
@@ -49,11 +48,11 @@ namespace damebot_engine
         }
         public override int GetHashCode()
         {
-            return X.GetHashCode() ^ Y.GetHashCode();
+            return Column.GetHashCode() ^ Row.GetHashCode();
         }
         public override string ToString()
         {
-            return string.Format("[{0}, {1}]", X + 1, Y + 1);
+            return string.Format("[{0}, {1}]", Column + 1, Row + 1);
         }
     }
 }

@@ -6,45 +6,44 @@ namespace damebot_engine
 {
     using EVALUATED_MOVE = (MOVE? move, int evaluation);
     using MOVE_TASK = (MOVE move, Task<int> evaluation_task);
-
     public enum PLAYER_TYPE { min, max }
+
     public interface IPlayer
     {
-        bool Automatic { get; }
+        bool IsAutomatic { get; }
         string Name { get; }
 
-        void AddPiece(Piece p);
-        void RemovePiece(Piece p);
+        void AddPiece(Piece piece);
+        void RemovePiece(Piece piece);
+        IReadOnlyList<Piece> GetPieces();
         IPlayer Copy();
 
         bool CanCapture(IBoard board);
         Task<MOVE?> FindNextMove(IBoard board, IPlayer other);
-        IReadOnlyList<Piece> GetPieces();
     }
-    {
-        public bool Automatic { get; } = automatic;
     public class DamePlayer(bool automatic, PLAYER_TYPE type, string name): IPlayer
+        public bool IsAutomatic { get; } = automatic;
         public string Name { get; } = name;
 
         readonly PLAYER_TYPE type = type;
         List<Piece> pieces = new();
 
+        public void AddPiece(Piece piece)
+        {
+            pieces.Add(piece);
+        }
+        public void RemovePiece(Piece piece)
+        {
+            pieces.Remove(piece);
+        }
         public IReadOnlyList<Piece> GetPieces()
         {
             return pieces;
         }
-        public void AddPiece(Piece p)
-        {
-            pieces.Add(p);
-        }
-        public void RemovePiece(Piece p)
-        {
-            pieces.Remove(p);
-        }
 
         public IPlayer Copy()
         {
-            return new Player(Automatic, type, Name)
+            return new DamePlayer(IsAutomatic, type, Name)
             {
                 pieces = new List<Piece>(pieces)
             };
@@ -69,29 +68,29 @@ namespace damebot_engine
         }
         IEnumerable<MOVE> EnumerateAllMoves(IBoard board)
         {
-            foreach (Piece p in pieces)
+            foreach (Piece piece in pieces)
             {
-                foreach (MOVE m in p.EnumerateMoves(board, new MOVE(p.Position)))
+                foreach (MOVE move in piece.EnumerateMoves(board, new MOVE(piece.Position)))
                 {
-                    yield return m;
+                    yield return move;
                 }
             }
         }
         IEnumerable<MOVE> EnumerateAllJumps(IBoard board)
         {
-            foreach (Piece p in pieces)
+            foreach (Piece piece in pieces)
             {
-                foreach (MOVE m in p.EnumerateJumps(board, new MOVE(p.Position)))
+                foreach (MOVE move in piece.EnumerateJumps(board, new MOVE(piece.Position)))
                 {
-                    yield return m;
+                    yield return move;
                 }
             }
         }
         public bool CanCapture(IBoard board)
         {
-            foreach (Piece p in pieces)
+            foreach (Piece piece in pieces)
             {
-                if (p.CanCapture(board))
+                if (piece.CanCapture(board))
                 {
                     return true;
                 }
@@ -106,15 +105,15 @@ namespace damebot_engine
         }
 
         const int max_depth = 2;
-        async public Task<EVALUATED_MOVE> FindNextMove(IBoard board, IPlayer other, int depth)
+        async Task<EVALUATED_MOVE> FindNextMove(IBoard board, IPlayer other, int depth)
         {
             List<MOVE_TASK> tasks = new();
             IEnumerable<MOVE> moves = CanCapture(board) ? EnumerateAllJumps(board) : EnumerateAllMoves(board);
 
-            foreach (MOVE m in moves)
+            foreach (MOVE move in moves)
             {
-                Task<int> t = EvaluateMove(board, other, depth, m);
-                tasks.Add((m, t));
+                Task<int> future_evaluation = EvaluateMove(board, other, depth, move);
+                tasks.Add((move, future_evaluation));
             }
 
             int best_evaluation = InitialEvaluation;
@@ -155,10 +154,10 @@ namespace damebot_engine
                 return (best_moves[random], best_evaluation);
             }
         }
-        async Task<int> EvaluateMove(IBoard board, IPlayer other, int depth, MOVE m)
+        async Task<int> EvaluateMove(IBoard board, IPlayer other, int depth, MOVE move)
         {
-            Piece moving = board[m.Squares[0]]!;
-            (IBoard simulated, Piece moved) = board.SimulateMove(m);
+            Piece moving = board[move.Squares[0]]!;
+            (IBoard simulated, Piece moved) = board.SimulateMove(move);
             //Debug.WriteLine(depth);
             //Debug.WriteLine(simulated);
 
@@ -168,18 +167,18 @@ namespace damebot_engine
             }
             else
             {
-                Player me = (Player)Copy();
+                DamePlayer me = (DamePlayer)Copy();
                 me.RemovePiece(moving);
                 me.AddPiece(moved);
 
-                Player you = (Player)other.Copy();
-                foreach (Piece captured in m.CapturedPieces)
+                DamePlayer you = (DamePlayer)other.Copy();
+                foreach (Piece captured in move.CapturedPieces)
                 {
                     you.RemovePiece(captured);
                 }
 
-                EVALUATED_MOVE move = await you.FindNextMove(simulated, me, depth + 1);
-                return move.evaluation;
+                EVALUATED_MOVE evaluated_move = await you.FindNextMove(simulated, me, depth + 1);
+                return evaluated_move.evaluation;
             }
         }
     }

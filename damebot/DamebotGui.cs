@@ -25,7 +25,7 @@ namespace damebot
             {
                 return new SolidBrush(marked);
             }
-            else if ((square.X + square.Y) % 2 == 0)
+            else if ((square.Column + square.Row) % 2 == 0)
             {
                 return new SolidBrush(dark);
             }
@@ -36,8 +36,8 @@ namespace damebot
         }
         private Rectangle ComputeRectangle(SQUARE square)
         {
-            int left = square.X * board_panel.Size.Width / board.Size;
-            int upper = board_panel.Size.Height - (square.Y + 1) * board_panel.Size.Height / board.Size;
+            int left = square.Column * board_panel.Size.Width / board.Size;
+            int upper = board_panel.Size.Height - (square.Row + 1) * board_panel.Size.Height / board.Size;
             int width = board_panel.Size.Width / board.Size;
             int height = board_panel.Size.Height / board.Size;
 
@@ -45,10 +45,10 @@ namespace damebot
         }
         private SQUARE LocationToSquare(Point point)
         {
-            int x = board.Size * point.X / board_panel.Width;
-            int y = board.Size - board.Size * point.Y / board_panel.Height - 1;
+            int column = board.Size * point.X / board_panel.Width;
+            int row = board.Size - board.Size * point.Y / board_panel.Height - 1;
 
-            return new SQUARE(x, y);
+            return new SQUARE(column, row);
         }
 
         IBoard board;
@@ -71,7 +71,7 @@ namespace damebot
             marked_squares = null;
 
             InitPlayers(computer_black_radio.Checked, white_computer_radio.Checked);
-            board = new DefaultBoard();
+            board = new DameBoard();
             board.GenerateInitialPieces(white, black);
             engine = new DameEngine(board, white, black);
             engine.OnMove += OnMoveHandler;
@@ -90,15 +90,15 @@ namespace damebot
         {
             int lable_width = board_panel.Width / board.Size;
             int lable_height = board_panel.Height / board.Size;
-            for (int f = 0; f < board.Size; f += 1)
+            for (int column = 0; column < board.Size; column += 1)
             {
-                string character = ((char)('a' + f)).ToString();
+                string character = ((char)('a' + column)).ToString();
                 Label top = new()
                 {
                     Width = lable_width,
                     Height = board_panel.Top,
                     Top = 0,
-                    Left = board_panel.Left + f * lable_width,
+                    Left = board_panel.Left + column * lable_width,
                     Text = character,
                     TextAlign = ContentAlignment.MiddleCenter
                 };
@@ -107,7 +107,7 @@ namespace damebot
                     Width = lable_width,
                     Height = board_panel.Top,
                     Top = board_panel.Bottom,
-                    Left = board_panel.Left + f * lable_width,
+                    Left = board_panel.Left + column * lable_width,
                     Text = character,
                     TextAlign = ContentAlignment.MiddleCenter
                 };
@@ -118,14 +118,14 @@ namespace damebot
                 background_panel.Controls.Add(top);
                 background_panel.Controls.Add(bottom);
             }
-            for (int f = 0; f < board.Size; f += 1)
+            for (int row = 0; row < board.Size; row += 1)
             {
-                string number = (board.Size - f).ToString();
+                string number = (board.Size - row).ToString();
                 Label left = new()
                 {
                     Width = board_panel.Left,
                     Height = lable_height,
-                    Top = board_panel.Top + f * lable_height,
+                    Top = board_panel.Top + row * lable_height,
                     Left = 0,
                     Text = number,
                     TextAlign = ContentAlignment.MiddleCenter
@@ -134,7 +134,7 @@ namespace damebot
                 {
                     Width = board_panel.Left,
                     Height = lable_height,
-                    Top = board_panel.Top + f * lable_height,
+                    Top = board_panel.Top + row * lable_height,
                     Left = board_panel.Right,
                     Text = number,
                     TextAlign = ContentAlignment.MiddleCenter
@@ -253,15 +253,15 @@ namespace damebot
             wait_for_computer = (next_player == null);
             Draw();
         }
-        private void OnMarkHandler(MOVE m)
+        private void OnMarkHandler(MOVE move)
         {
-            marked_squares = m.Squares;
+            marked_squares = move.Squares;
             ResetMove();
         }
-        private void OnGameOverHandler(IPlayer p)
+        private void OnGameOverHandler(IPlayer player)
         {
             ResetMove();
-            string caption = string.Format("{0} zvítězil.", p.Name);
+            string caption = string.Format("{0} zvítězil.", player.Name);
             DialogResult result = MessageBox.Show("Chceš zahájit novou hru?", caption, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
             if (result == DialogResult.Yes)

@@ -42,10 +42,10 @@ namespace damebot_engine
             squares = new() { original };
             captered_pieces = new();
         }
-        public MOVE(MOVE m)
+        public MOVE(MOVE other_move)
         {
-            squares = new List<SQUARE>(m.squares);
-            captered_pieces = new List<Piece>(m.captered_pieces);
+            squares = new List<SQUARE>(other_move.squares);
+            captered_pieces = new List<Piece>(other_move.captered_pieces);
         }
     }
 }

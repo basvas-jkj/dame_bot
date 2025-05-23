@@ -4,33 +4,34 @@ using System.Threading.Tasks;
 namespace damebot_engine
 {
     public delegate void MoveEvent(IPlayer? next_player);
-    public delegate void MarkEvent(MOVE m);
-    public delegate void GameOverEvent(IPlayer p);
+    public delegate void MarkEvent(MOVE move);
+    public delegate void GameOverEvent(IPlayer piece);
     public interface IEngine
     {
         bool IsOnMovePiece(SQUARE position);
-        MOVE_INFO ValidateMove(Piece piece, MOVE m, SQUARE next);
-        void PerformMove(MOVE m);
+        MOVE_INFO ValidateMove(Piece piece, MOVE move, SQUARE next);
+        void PerformMove(MOVE move);
         void PerformAutomaticMove();
 
         event MoveEvent? OnMove;
         event MarkEvent? OnMark;
         event GameOverEvent? OnGameOver;
     }
+
     public class DameEngine(IBoard board, IPlayer white, IPlayer black): IEngine
     {
-        public IBoard Board { get; } = board;
-        public IPlayer White { get; } = white;
-        public IPlayer Black { get; } = black;
+        IBoard board = board;
+        IPlayer white = white;
+        IPlayer black = black;
 
         private IPlayer player_on_move = white;
         private IPlayer waiting_player
         {
-            get => (player_on_move == White) ? Black : White;
+            get => (player_on_move == white) ? black : white;
         }
         private void SwitchPlayers()
         {
-            player_on_move = (player_on_move == White) ? Black : White;
+            player_on_move = (player_on_move == white) ? black : white;
         }
 
         public event MoveEvent? OnMove;
@@ -39,24 +40,24 @@ namespace damebot_engine
 
         public bool IsOnMovePiece(SQUARE position)
         {
-            if (player_on_move == White)
+            if (player_on_move == white)
             {
-                return Board[position] is WhiteMan || Board[position] is WhiteKing;
+                return board[position] is WhiteMan || board[position] is WhiteKing;
             }
             else
             {
-                return Board[position] is BlackMan || Board[position] is BlackKing;
+                return board[position] is BlackMan || board[position] is BlackKing;
             }
         }
-        public MOVE_INFO ValidateMove(Piece piece, MOVE m, SQUARE next)
+        public MOVE_INFO ValidateMove(Piece piece, MOVE move, SQUARE next)
         {
-            MOVE_INFO info = piece.GetMoveInfo(Board, m, next);
+            MOVE_INFO info = piece.GetMoveInfo(board, move, next);
 
             if (info.CompleteJump || info.IncompleteJump)
             {
                 return info;
             }
-            if (info.Move && !player_on_move.CanCapture(Board))
+            if (info.Move && !player_on_move.CanCapture(board))
             {
                 return info;
             }
@@ -66,14 +67,14 @@ namespace damebot_engine
             }
         }
 
-        public void PerformMove(MOVE m)
+        public void PerformMove(MOVE move)
         {
-            Debug.Assert(Board[m.Squares[0]] != null);
+            Debug.Assert(board[move.Squares[0]] != null);
 
-            Piece moving = Board[m.Squares[0]]!;
-            Piece moved = Board.PerformMove(m);
+            Piece moving = board[move.Squares[0]]!;
+            Piece moved = board.PerformMove(move);
 
-            foreach (Piece captured in m.CapturedPieces)
+            foreach (Piece captured in move.CapturedPieces)
             {
                 waiting_player.RemovePiece(captured);
             }
@@ -87,7 +88,7 @@ namespace damebot_engine
             {
                 OnGameOver?.Invoke(waiting_player);
             }
-            else if (player_on_move.Automatic)
+            else if (player_on_move.IsAutomatic)
             {
                 OnMove?.Invoke(null);
                 PerformAutomaticMove();
@@ -101,9 +102,9 @@ namespace damebot_engine
 
         public void PerformAutomaticMove()
         {
-            var v = TaskScheduler.FromCurrentSynchronizationContext();
-            player_on_move.FindNextMove(Board, waiting_player)
-                .ContinueWith(PerformAutomaticMove, v);
+            TaskScheduler scheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            player_on_move.FindNextMove(board, waiting_player)
+                .ContinueWith(PerformAutomaticMove, scheduler);
         }
         void PerformAutomaticMove(Task<MOVE?> generated)
         {

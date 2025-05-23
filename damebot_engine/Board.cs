@@ -5,50 +5,49 @@ using System.Text;
 namespace damebot_engine
 {
     using SIMULATED_MOVE = (IBoard board, Piece moved);
-
     public interface IBoard
     {
         int Size { get; }
         Piece? this[SQUARE position] { get; }
 
         void GenerateInitialPieces(IPlayer white, IPlayer black);
-        Piece PerformMove(MOVE m);
-        SIMULATED_MOVE SimulateMove(MOVE m);
+        Piece PerformMove(MOVE move);
+        SIMULATED_MOVE SimulateMove(MOVE move);
         int EvaluatePosition();
     }
-    public class DefaultBoard: IBoard
+    public class DameBoard: IBoard
     {
         private Piece?[,] board;
         public Piece? this[SQUARE position]
         {
-            get => board[position.X, position.Y];
-            private set => board[position.X, position.Y] = value;
+            get => board[position.Column, position.Row];
+            private set => board[position.Column, position.Row] = value;
         }
 
         public int Size { get => 8; }
 
-        public DefaultBoard()
+        public DameBoard()
         {
             board = new Piece[Size, Size];
         }
-        public DefaultBoard(DefaultBoard @default)
+        public DameBoard(DameBoard board)
         {
-            board = (Piece?[,])@default.board.Clone();
+            this.board = (Piece?[,])board.board.Clone();
         }
 
         IEnumerable<SQUARE> GenerateInitialPositions()
         {
-            for (int f = 0; f < Size; f += 2)
+            for (int column = 0; column < Size; column += 2)
             {
-                yield return new SQUARE(f, 0);
-                yield return new SQUARE(f, 2);
-                yield return new SQUARE(f, Size - 2);
+                yield return new SQUARE(column, 0);
+                yield return new SQUARE(column, 2);
+                yield return new SQUARE(column, Size - 2);
             }
-            for (int f = 1; f < Size; f += 2)
+            for (int column = 1; column < Size; column += 2)
             {
-                yield return new SQUARE(f, 1);
-                yield return new SQUARE(f, Size - 1);
-                yield return new SQUARE(f, Size - 3);
+                yield return new SQUARE(column, 1);
+                yield return new SQUARE(column, Size - 1);
+                yield return new SQUARE(column, Size - 3);
             }
         }
         public void GenerateInitialPieces(IPlayer white, IPlayer black)
@@ -56,7 +55,7 @@ namespace damebot_engine
             foreach (SQUARE position in GenerateInitialPositions())
             {
                 Piece piece;
-                if (position.Y < Size / 2)
+                if (position.Row < Size / 2)
                 {
                     piece = new WhiteMan(position);
                     white.AddPiece(piece);
@@ -73,15 +72,15 @@ namespace damebot_engine
         public int EvaluatePosition()
         {
             int value = 0;
-            foreach (Piece? p in board)
+            foreach (Piece? piece in board)
             {
-                value += p?.Value ?? 0;
+                value += piece?.Value ?? 0;
             }
             return value;
         }
-        public Piece PerformMove(MOVE m)
+        public Piece PerformMove(MOVE move)
         {
-            IReadOnlyList<SQUARE> squares = m.Squares;
+            IReadOnlyList<SQUARE> squares = move.Squares;
             SQUARE original = squares[0];
             SQUARE next = squares[^1];
 
@@ -91,7 +90,7 @@ namespace damebot_engine
             this[original] = null;
             this[next] = moved;
 
-            foreach (Piece captured in m.CapturedPieces)
+            foreach (Piece captured in move.CapturedPieces)
             {
                 RemovePiece(captured);
             }
@@ -105,10 +104,10 @@ namespace damebot_engine
 
             return moved;
         }
-        public SIMULATED_MOVE SimulateMove(MOVE m)
+        public SIMULATED_MOVE SimulateMove(MOVE move)
         {
-            DefaultBoard simulated = new(this);
-            Piece moved = simulated.PerformMove(m);
+            DameBoard simulated = new(this);
+            Piece moved = simulated.PerformMove(move);
             return (simulated, moved);
         }
 
@@ -124,20 +123,20 @@ namespace damebot_engine
 
         public override string ToString()
         {
-            StringBuilder sb = new("----------\n");
+            StringBuilder builder = new("----------\n");
 
-            for (int fa = Size - 1; fa >= 0; fa -= 1)
+            for (int row = Size - 1; row >= 0; row -= 1)
             {
-                sb.Append("|");
-                for (int fb = 0; fb < Size; fb += 1)
+                builder.Append("|");
+                for (int column = 0; column < Size; column += 1)
                 {
-                    sb.Append(board[fb, fa]?.ToString() ?? " ");
+                    builder.Append(board[column, row]?.ToString() ?? " ");
                 }
-                sb.AppendLine("|");
+                builder.AppendLine("|");
             }
 
-            sb.AppendLine("----------");
-            return sb.ToString();
+            builder.AppendLine("----------");
+            return builder.ToString();
         }
     }
 }
