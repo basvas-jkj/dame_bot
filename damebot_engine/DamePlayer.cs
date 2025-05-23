@@ -21,9 +21,9 @@ namespace damebot_engine
         Task<MOVE?> FindNextMove(IBoard board, IPlayer other);
         IReadOnlyList<Piece> GetPieces();
     }
-    public class Player(bool automatic, PLAYER_TYPE type, string name): IPlayer
     {
         public bool Automatic { get; } = automatic;
+    public class DamePlayer(bool automatic, PLAYER_TYPE type, string name): IPlayer
         public string Name { get; } = name;
 
         readonly PLAYER_TYPE type = type;
