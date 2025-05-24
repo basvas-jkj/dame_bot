@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace damebot_engine
@@ -230,15 +231,16 @@ namespace damebot_engine
         /// <returns>future of the most suitable move</returns>
         public async Task<MOVE?> FindNextMove(IBoard board, IPlayer other)
         {
-            //Debug.WriteLine("======================================");
             EVALUATED_MOVE evaluation = await FindNextMove(board, other, 1);
+            Debug.WriteLine("({0}) {1}", evaluation.evaluation, evaluation.move);
+
             return evaluation.move;
         }
 
         /// <summary>
         /// Maximum depth used to in minimax algorithm.
         /// </summary>
-        const int max_depth = 2;
+        const int max_depth = 6;
         /// <summary>
         /// Finds the most suitable move for this player on the given <paramref name="board"/> with respect to the current <paramref name="depth"/>. 
         /// </summary>
@@ -259,9 +261,9 @@ namespace damebot_engine
 
             int best_evaluation = InitialEvaluation;
             List<MOVE> best_moves = new();
-            foreach ((MOVE move, Task<int> evaluation_task) in tasks)
+            foreach ((MOVE move, Task<int> future_evaluation) in tasks)
             {
-                int new_evaluation = await evaluation_task;
+                int new_evaluation = await future_evaluation;
                 int better = SelectBetterEvaluation(best_evaluation, new_evaluation);
 
                 if (better == best_evaluation && better == new_evaluation)
@@ -307,8 +309,6 @@ namespace damebot_engine
         {
             Piece moving = board[move.Squares[0]]!;
             (IBoard simulated, Piece moved) = board.SimulateMove(move);
-            //Debug.WriteLine(depth);
-            //Debug.WriteLine(simulated);
 
             if (depth == max_depth)
             {

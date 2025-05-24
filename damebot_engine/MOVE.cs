@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace damebot_engine
 {
@@ -83,6 +84,21 @@ namespace damebot_engine
         {
             squares = new List<SQUARE>(other_move.squares);
             captered_pieces = new List<Piece>(other_move.captered_pieces);
+        }
+
+        /// <summary>
+        /// Converts this MOVE to its string reprezentation. 
+        /// </summary>
+        /// <returns>String representation of this MOVE.</returns>
+        public override string ToString()
+        {
+            StringBuilder builder = new(captered_pieces.Count == 0 ? "move:" : "jump:");
+            foreach (SQUARE square in squares)
+            {
+                builder.Append(' ');
+                builder.Append(square);
+            }
+            return builder.ToString();
         }
     }
 }
