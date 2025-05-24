@@ -171,7 +171,7 @@ namespace damebot_engine
     /// </summary>
     /// <param name="Position">Square which the piece lies on.</param>
     /// <param name="Image">Image representing the piece in GUI.</param>
-    abstract record class ManBase(SQUARE position, Image image): Piece(position, image)
+    abstract record class ManBase(SQUARE Position, Image image): Piece(Position, image)
     {
         /// <summary>
         /// Direction of this man move.
@@ -327,8 +327,8 @@ namespace damebot_engine
     /// <summary>
     /// A piece representing one white man.
     /// </summary>
-    /// <param name="position">Position of this piece.</param>
-    record class WhiteMan(SQUARE position): ManBase(position, loaded_image)
+    /// <param name="Position">Position of this piece.</param>
+    record class WhiteMan(SQUARE Position): ManBase(Position, loaded_image)
     {
         /// <summary>
         /// Image representing WhiteMan in GUI.
@@ -391,8 +391,8 @@ namespace damebot_engine
     /// <summary>
     /// A piece representing one black man.
     /// </summary>
-    /// <param name="position">Position of this piece.</param>
-    record class BlackMan(SQUARE position): ManBase(position, loaded_image)
+    /// <param name="Position">Position of this piece.</param>
+    record class BlackMan(SQUARE Position): ManBase(Position, loaded_image)
     {
         /// <summary>
         /// Image representing BlackMan in GUI.
@@ -458,7 +458,7 @@ namespace damebot_engine
     /// </summary>
     /// <param name="Position">Square which the piece lies on.</param>
     /// <param name="Image">Image representing the piece in GUI.</param>
-    abstract record class KingBase(SQUARE position, Image image): Piece(position, image)
+    abstract record class KingBase(SQUARE Position, Image image): Piece(Position, image)
     {
         /// <summary>
         /// Checks if this king can capture any enemy piece in
@@ -691,8 +691,8 @@ namespace damebot_engine
     /// <summary>
     /// A piece representing one white king.
     /// </summary>
-    /// <param name="position">Position of this piece.</param>
-    record class WhiteKing(SQUARE position): KingBase(position, loaded_image)
+    /// <param name="Position">Position of this piece.</param>
+    record class WhiteKing(SQUARE Position): KingBase(Position, loaded_image)
     {
         /// <summary>
         /// Image representing WhiteKing in GUI.
@@ -727,8 +727,8 @@ namespace damebot_engine
     /// <summary>
     /// A piece representing one black king.
     /// </summary>
-    /// <param name="position">Position of this piece.</param>
-    record class BlackKing(SQUARE position): KingBase(position, loaded_image)
+    /// <param name="Position">Position of this piece.</param>
+    record class BlackKing(SQUARE Position): KingBase(Position, loaded_image)
     {
         /// <summary>
         /// Image representing BlackKing in GUI.
