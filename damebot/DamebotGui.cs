@@ -355,7 +355,7 @@ namespace damebot
         private void OnMoveHandler(IPlayer? next_player)
         {
             wait_for_computer = (next_player == null);
-            Draw();
+            ResetMove();
         }
         /// <summary>
         /// 
@@ -364,7 +364,7 @@ namespace damebot
         private void OnMarkHandler(MOVE move)
         {
             marked_squares = move.Squares;
-            ResetMove();
+            Draw();
         }
         /// <summary>
         /// 

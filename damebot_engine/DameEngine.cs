@@ -160,7 +160,6 @@ namespace damebot_engine
             else
             {
                 OnMove?.Invoke(player_on_move);
-                OnMark?.Invoke(new MOVE());
             }
         }
 
@@ -177,7 +176,7 @@ namespace damebot_engine
         /// 
         /// </summary>
         /// <param name="generated"></param>
-        void PerformAutomaticMove(Task<MOVE?> generated)
+        async void PerformAutomaticMove(Task<MOVE?> generated)
         {
             if (generated.Exception != null)
             {
@@ -185,8 +184,10 @@ namespace damebot_engine
             }
             else if (generated.Result != null)
             {
-                PerformMove(generated.Result.Value);
+                await Task.Delay(200);
                 OnMark?.Invoke(generated.Result.Value);
+                await Task.Delay(1000);
+                PerformMove(generated.Result.Value);
             }
             else
             {
