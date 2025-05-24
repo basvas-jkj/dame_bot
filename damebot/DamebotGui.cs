@@ -8,13 +8,33 @@ using System.Windows.Forms;
 
 namespace damebot
 {
+    /// <summary>
+    /// Graphical user interface for DamebotEngine.
+    /// </summary>
     public partial class DamebotGui: Form
     {
+        /// <summary>
+        /// Colour of the dark squares.
+        /// </summary>
         static readonly Color dark = Color.FromArgb(172, 113, 30);
+        /// <summary>
+        /// Colour of the light squares.
+        /// </summary>
         static readonly Color light = Color.FromArgb(255, 255, 240);
+        /// <summary>
+        /// Colour of the squares selected for the upcoming move by the player.
+        /// </summary>
         static readonly Color selected = Color.FromArgb(255, 0, 0);
+        /// <summary>
+        /// Colour of the squares selected for the upcoming by the compoter.
+        /// </summary>
         static readonly Color marked = Color.FromArgb(0, 159, 255);
 
+        /// <summary>
+        /// Chooses colour for the board field.
+        /// </summary>
+        /// <param name="square">Identifiesn of the game board field.</param>
+        /// <returns>Colour which will be used during board drawing.</returns>
         private SolidBrush SelectColour(SQUARE square)
         {
             if (selected_squares?.Contains(square) == true)
@@ -34,6 +54,11 @@ namespace damebot
                 return new SolidBrush(light);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="square"></param>
+        /// <returns></returns>
         private Rectangle ComputeRectangle(SQUARE square)
         {
             int left = square.Column * board_panel.Size.Width / board.Size;
@@ -43,6 +68,11 @@ namespace damebot
 
             return new Rectangle(left, upper, width, height);
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
         private SQUARE LocationToSquare(Point point)
         {
             int column = board.Size * point.X / board_panel.Width;
@@ -51,20 +81,52 @@ namespace damebot
             return new SQUARE(column, row);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         IBoard board;
+        /// <summary>
+        /// 
+        /// </summary>
         IPlayer white;
+        /// <summary>
+        /// 
+        /// </summary>
         IPlayer black;
+        /// <summary>
+        /// 
+        /// </summary>
         IEngine engine;
+        /// <summary>
+        /// 
+        /// </summary>
         IReadOnlyList<SQUARE>? selected_squares;
+        /// <summary>
+        /// 
+        /// </summary>
         IReadOnlyList<SQUARE>? marked_squares;
+        /// <summary>
+        /// 
+        /// </summary>
         MOVE current_move;
+        /// <summary>
+        /// 
+        /// </summary>
         bool wait_for_computer;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="white_is_computer"></param>
+        /// <param name="black_is_computer"></param>
         private void InitPlayers(bool white_is_computer, bool black_is_computer)
         {
             white = new DamePlayer(white_is_computer, PLAYER_TYPE.max, "Bílý");
             black = new DamePlayer(black_is_computer, PLAYER_TYPE.min, "Černý");
         }
+        /// <summary>
+        /// 
+        /// </summary>
         private void ResetGame()
         {
             selected_squares = null;
@@ -86,6 +148,9 @@ namespace damebot
                 engine.PerformAutomaticMove();
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         private void GenerateEdgeLabels()
         {
             int lable_width = board_panel.Width / board.Size;
@@ -147,6 +212,9 @@ namespace damebot
                 background_panel.Controls.Add(right);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         public DamebotGui()
         {
             InitializeComponent();
@@ -156,6 +224,10 @@ namespace damebot
 
         #region move selection
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="position"></param>
         private void SelectPiece(SQUARE position)
         {
             Debug.Assert(selected_squares == null);
@@ -167,6 +239,11 @@ namespace damebot
                 Draw();
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="position"></param>
+        /// <exception cref="NullReferenceException"></exception>
         private void SelectMove(SQUARE position)
         {
             Debug.Assert(selected_squares != null);
@@ -197,6 +274,9 @@ namespace damebot
             marked_squares = null;
             engine.PerformMove(current_move);
         }
+        /// <summary>
+        /// 
+        /// </summary>
         void ResetMove()
         {
             selected_squares = null;
@@ -206,6 +286,11 @@ namespace damebot
         #endregion
         #region draw board and pieces
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="board_graphics"></param>
+        /// <param name="square"></param>
         private void DrawSquare(Graphics board_graphics, SQUARE square)
         {
             Rectangle board_square = ComputeRectangle(square);
@@ -213,6 +298,10 @@ namespace damebot
 
             board_graphics.FillRectangle(brush, board_square);
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="board_graphics"></param>
         private void DrawBoardPanel(Graphics board_graphics)
         {
             for (int fa = 0; fa < board.Size; fa += 1)
@@ -223,6 +312,10 @@ namespace damebot
                 }
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="board_graphics"></param>
         private void DrawPieces(Graphics board_graphics)
         {
             IEnumerable<Piece> all_pieces = Enumerable.Concat(
@@ -235,11 +328,18 @@ namespace damebot
                 board_graphics.DrawImage(piece.Image, rectangle);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="board_graphics"></param>
         private void Draw(Graphics board_graphics)
         {
             DrawBoardPanel(board_graphics);
             DrawPieces(board_graphics);
         }
+        /// <summary>
+        /// 
+        /// </summary>
         private void Draw()
         {
             Draw(board_panel.CreateGraphics());
@@ -248,16 +348,28 @@ namespace damebot
         #endregion
         #region event handlers
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="next_player"></param>
         private void OnMoveHandler(IPlayer? next_player)
         {
             wait_for_computer = (next_player == null);
             Draw();
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="move"></param>
         private void OnMarkHandler(MOVE move)
         {
             marked_squares = move.Squares;
             ResetMove();
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="player"></param>
         private void OnGameOverHandler(IPlayer player)
         {
             ResetMove();
@@ -273,10 +385,20 @@ namespace damebot
                 Application.Exit();
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void board_panel_Paint(object sender, PaintEventArgs e)
         {
             Draw(e.Graphics);
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void board_panel_MouseClick(object sender, MouseEventArgs e)
         {
             if (wait_for_computer)
@@ -292,6 +414,11 @@ namespace damebot
                 SelectMove(square);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void new_game_button_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show("Chceš zahájit novou hru?", "Nová hra?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
@@ -300,6 +427,11 @@ namespace damebot
                 ResetGame();
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void radio_button_CheckedChanged(object sender, EventArgs e)
         {
             if (!(sender as RadioButton)!.Checked)
@@ -311,6 +443,11 @@ namespace damebot
                 ResetGame();
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void background_panel_MouseLeave(object? sender, EventArgs e)
         {
             if (wait_for_computer)
