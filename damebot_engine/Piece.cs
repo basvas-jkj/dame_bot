@@ -461,6 +461,17 @@ namespace damebot_engine
     abstract record class KingBase(SQUARE Position, Image image): Piece(Position, image)
     {
         /// <summary>
+        /// Stores all posibble dorections of king's move.
+        /// </summary>
+        static IReadOnlyList<SQUARE_DIFF> all_directions =
+        [
+            (1, 1),
+            (1, -1),
+            (-1, 1),
+            (-1, -1)
+        ];
+
+        /// <summary>
         /// Checks if this king can capture any enemy piece in
         /// the given <paramref name="direction"/> after performing a given <paramref name="move"/>
         /// with respect to position defined by <paramref name="board"/>. 
@@ -637,9 +648,15 @@ namespace damebot_engine
                 }
                 else if (info.IncompleteJump)
                 {
-                    foreach (MOVE complete_move in EnumerateJumps(board, copy))
+                    foreach (SQUARE_DIFF next_direction in
+                        from dir in all_directions
+                        where dir != direction.Inverse()
+                        select dir)
                     {
-                        yield return complete_move;
+                        foreach (MOVE complete_move in EnumerateJumps(board, copy, next_direction))
+                        {
+                            yield return complete_move;
+                        }
                     }
                 }
                 else
@@ -659,9 +676,8 @@ namespace damebot_engine
         public sealed override IEnumerable<MOVE> EnumerateMoves(IBoard board, MOVE move)
         {
             IEnumerable<MOVE> posible_moves = [];
-            SQUARE_DIFF[] directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
 
-            foreach (SQUARE_DIFF direction in directions)
+            foreach (SQUARE_DIFF direction in all_directions)
             {
                 IEnumerable<MOVE> enumerated_moves = EnumerateMoves(board, move, direction);
                 posible_moves = posible_moves.Concat(enumerated_moves);
@@ -677,9 +693,8 @@ namespace damebot_engine
         public sealed override IEnumerable<MOVE> EnumerateJumps(IBoard board, MOVE move)
         {
             IEnumerable<MOVE> posible_moves = [];
-            SQUARE_DIFF[] directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
 
-            foreach (SQUARE_DIFF direction in directions)
+            foreach (SQUARE_DIFF direction in all_directions)
             {
                 IEnumerable<MOVE> enumerated_moves = EnumerateJumps(board, move, direction);
                 posible_moves = posible_moves.Concat(enumerated_moves);
@@ -701,7 +716,7 @@ namespace damebot_engine
         /// <summary>
         /// Value of the WhiteKing used by DameEngine.
         /// </summary>
-        public override int Value { get => 5; }
+        public override int Value { get => 8; }
 
         /// <summary>
         /// Checks if <paramref name="other"/> piece has the opposite colour than this WhiteKing.
@@ -737,7 +752,7 @@ namespace damebot_engine
         /// <summary>
         /// Value of the BlackKing used by DameEngine.
         /// </summary>
-        public override int Value { get => -5; }
+        public override int Value { get => -8; }
 
         /// <summary>
         /// Checks if <paramref name="other"/> piece has the opposite colour than this BlackKing.

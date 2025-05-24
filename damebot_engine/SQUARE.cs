@@ -20,6 +20,15 @@ namespace damebot_engine
         {
             return (Math.Sign(diff.Column), Math.Sign(diff.Row));
         }
+        /// <summary>
+        /// Switches the sign of both coordinates f the <paramref name="diff"/>.
+        /// </summary>
+        /// <param name="diff">The SQUARE_DIFF tuple to be inversed.</param>
+        /// <returns>Inversed version of <paramref name="diff"/></returns>
+        public static SQUARE_DIFF Inverse(this SQUARE_DIFF diff)
+        {
+            return (-diff.Column, -diff.Row);
+        }
     }
 
     /// <summary>
