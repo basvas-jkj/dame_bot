@@ -716,7 +716,7 @@ namespace damebot_engine
         /// <summary>
         /// Value of the WhiteKing used by DameEngine.
         /// </summary>
-        public override int Value { get => 8; }
+        public override int Value { get => 4; }
 
         /// <summary>
         /// Checks if <paramref name="other"/> piece has the opposite colour than this WhiteKing.
@@ -752,7 +752,7 @@ namespace damebot_engine
         /// <summary>
         /// Value of the BlackKing used by DameEngine.
         /// </summary>
-        public override int Value { get => -8; }
+        public override int Value { get => -4; }
 
         /// <summary>
         /// Checks if <paramref name="other"/> piece has the opposite colour than this BlackKing.
