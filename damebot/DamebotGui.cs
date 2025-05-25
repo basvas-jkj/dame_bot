@@ -177,8 +177,8 @@ namespace damebot
                     TextAlign = ContentAlignment.MiddleCenter
                 };
 
-                top.MouseLeave += background_panel_MouseLeave;
-                bottom.MouseLeave += background_panel_MouseLeave;
+                top.MouseLeave += BackgroundPanelMouseLeaveHandler;
+                bottom.MouseLeave += BackgroundPanelMouseLeaveHandler;
 
                 background_panel.Controls.Add(top);
                 background_panel.Controls.Add(bottom);
@@ -205,8 +205,8 @@ namespace damebot
                     TextAlign = ContentAlignment.MiddleCenter
                 };
 
-                left.MouseLeave += background_panel_MouseLeave;
-                right.MouseLeave += background_panel_MouseLeave;
+                left.MouseLeave += BackgroundPanelMouseLeaveHandler;
+                right.MouseLeave += BackgroundPanelMouseLeaveHandler;
 
                 background_panel.Controls.Add(left);
                 background_panel.Controls.Add(right);
@@ -389,14 +389,14 @@ namespace damebot
         /// <summary>
         /// Redraws the board on the Paint event of the <c>board_panel</c>.
         /// </summary>
-        private void board_panel_Paint(object sender, PaintEventArgs e)
+        private void BoardPaintHandler(object sender, PaintEventArgs e)
         {
             Draw(e.Graphics);
         }
         /// <summary>
         /// Handles the MouseClick event of the <c>board_panel</c>.
         /// </summary>
-        private void board_panel_MouseClick(object sender, MouseEventArgs e)
+        private void BoardClickHandler(object sender, MouseEventArgs e)
         {
             if (wait_for_computer)
                 return;
@@ -414,7 +414,7 @@ namespace damebot
         /// <summary>
         /// Handles the Click event of the <c>new_game_button</c>.
         /// </summary>
-        private void new_game_button_Click(object sender, EventArgs e)
+        private void NewGameClickHandler(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show("Chceš zahájit novou hru?", "Nová hra?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
             if (result == DialogResult.OK)
@@ -425,7 +425,7 @@ namespace damebot
         /// <summary>
         /// Handles the CheckedChanged event of the <c>radio_button</c>.
         /// </summary>
-        private void radio_button_CheckedChanged(object sender, EventArgs e)
+        private void RadioCheckedChangedHandler(object sender, EventArgs e)
         {
             if (!(sender as RadioButton)!.Checked)
                 return;
@@ -439,7 +439,7 @@ namespace damebot
         /// <summary>
         /// Handles the MouseLeave event of the <c>background_panel</c>.
         /// </summary>
-        private void background_panel_MouseLeave(object? sender, EventArgs e)
+        private void BackgroundPanelMouseLeaveHandler(object? sender, EventArgs e)
         {
             if (wait_for_computer)
                 return;

@@ -47,8 +47,8 @@ namespace damebot
             board_panel.Name = "board_panel";
             board_panel.Size = new Size(386, 386);
             board_panel.TabIndex = 0;
-            board_panel.Paint += board_panel_Paint;
-            board_panel.MouseClick += board_panel_MouseClick;
+            board_panel.Paint += BoardPaintHandler;
+            board_panel.MouseClick += BoardClickHandler;
             // 
             // white_black_radio
             // 
@@ -61,7 +61,7 @@ namespace damebot
             white_black_radio.TabStop = true;
             white_black_radio.Text = "bílý × černý";
             white_black_radio.UseVisualStyleBackColor = true;
-            white_black_radio.CheckedChanged += radio_button_CheckedChanged;
+            white_black_radio.CheckedChanged += RadioCheckedChangedHandler;
             // 
             // white_computer_radio
             // 
@@ -72,7 +72,7 @@ namespace damebot
             white_computer_radio.TabIndex = 2;
             white_computer_radio.Text = "bílý × počítač";
             white_computer_radio.UseVisualStyleBackColor = true;
-            white_computer_radio.CheckedChanged += radio_button_CheckedChanged;
+            white_computer_radio.CheckedChanged += RadioCheckedChangedHandler;
             // 
             // computer_black_radio
             // 
@@ -83,7 +83,7 @@ namespace damebot
             computer_black_radio.TabIndex = 3;
             computer_black_radio.Text = "počítač × černý";
             computer_black_radio.UseVisualStyleBackColor = true;
-            computer_black_radio.CheckedChanged += radio_button_CheckedChanged;
+            computer_black_radio.CheckedChanged += RadioCheckedChangedHandler;
             // 
             // new_game_button
             // 
@@ -98,7 +98,7 @@ namespace damebot
             new_game_button.TabIndex = 4;
             new_game_button.Text = "Nová hra";
             new_game_button.UseVisualStyleBackColor = false;
-            new_game_button.Click += new_game_button_Click;
+            new_game_button.Click += NewGameClickHandler;
             // 
             // background_panel
             // 
@@ -109,7 +109,7 @@ namespace damebot
             background_panel.Name = "background_panel";
             background_panel.Size = new Size(426, 426);
             background_panel.TabIndex = 5;
-            background_panel.MouseLeave += background_panel_MouseLeave;
+            background_panel.MouseLeave += BackgroundPanelMouseLeaveHandler;
             // 
             // DamebotGui
             // 

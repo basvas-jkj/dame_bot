@@ -10,17 +10,17 @@ namespace damebot_engine
     /// reference to an instance of the player on move
     /// <c>null</c> if the compueter is on the move
     /// </param>
-    public delegate void MoveEvent(IPlayer? next_player);
+    public delegate void MoveEventHandler(IPlayer? next_player);
     /// <summary>
     /// Handler of the game engine Mark event.
     /// </summary>
     /// <param name="move">The move marked by computer.</param>
-    public delegate void MarkEvent(MOVE move);
+    public delegate void MarkEventHandler(MOVE move);
     /// <summary>
     /// Handler of the game engine GameOver event.
     /// </summary>
     /// <param name="piece">the winner of the game</param>
-    public delegate void GameOverEvent(IPlayer piece);
+    public delegate void GameOverEventHandler(IPlayer piece);
     /// <summary>
     /// Common interface for a game engine.
     /// </summary>
@@ -58,15 +58,15 @@ namespace damebot_engine
         /// <summary>
         /// Event raised when any piece is moved.
         /// </summary>
-        event MoveEvent? OnMove;
+        event MoveEventHandler? OnMove;
         /// <summary>
         /// Event raised when computer marks move which it wants to perform.
         /// </summary>
-        event MarkEvent? OnMark;
+        event MarkEventHandler? OnMark;
         /// <summary>
         /// Event raised the player on the move run out of their possibilities ()including the case they have lost all of their pieces).
         /// </summary>
-        event GameOverEvent? OnGameOver;
+        event GameOverEventHandler? OnGameOver;
     }
 
     /// <summary>
@@ -112,15 +112,15 @@ namespace damebot_engine
         /// <summary>
         /// Event raised when any piece is moved.
         /// </summary>
-        public event MoveEvent? OnMove;
+        public event MoveEventHandler? OnMove;
         /// <summary>
         /// Event raised when computer marks move which it wants to perform.
         /// </summary>
-        public event MarkEvent? OnMark;
+        public event MarkEventHandler? OnMark;
         /// <summary>
         /// Event raised the player on the move run out of their possibilities ()including the case they have lost all of their pieces).
         /// </summary>
-        public event GameOverEvent? OnGameOver;
+        public event GameOverEventHandler? OnGameOver;
 
         /// <summary>
         /// Checks if the field identified by <paramref name="position"/>
