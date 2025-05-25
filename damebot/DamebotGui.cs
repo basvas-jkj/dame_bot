@@ -55,10 +55,9 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Computes boundaries of the <paramref name="square"/> used for game board drawing.
         /// </summary>
-        /// <param name="square"></param>
-        /// <returns></returns>
+        /// <returns>computed boundaries as an instance of <c>Rectangle</c></returns>
         private Rectangle ComputeRectangle(SQUARE square)
         {
             int left = square.Column * board_panel.Size.Width / board.Size;
@@ -69,7 +68,7 @@ namespace damebot
             return new Rectangle(left, upper, width, height);
         }
         /// <summary>
-        /// 
+        /// Computes a square containing the given <paramref name="point"/>.
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
@@ -82,50 +81,51 @@ namespace damebot
         }
 
         /// <summary>
-        /// 
+        /// Reference to the game board used by the engine.
         /// </summary>
         IBoard board;
         /// <summary>
-        /// 
+        /// Reference to the player holding white pieces.
         /// </summary>
         IPlayer white;
         /// <summary>
-        /// 
+        /// Reference to the player holding black pieces.
         /// </summary>
         IPlayer black;
         /// <summary>
-        /// 
+        /// Reference to the game engine that controls the game.
         /// </summary>
         IEngine engine;
+
         /// <summary>
-        /// 
+        /// List of squares selected by the player for their next move.
         /// </summary>
         IReadOnlyList<SQUARE>? selected_squares;
         /// <summary>
-        /// 
+        /// List of squares selected by the computer for its next move.
         /// </summary>
         IReadOnlyList<SQUARE>? marked_squares;
         /// <summary>
-        /// 
+        /// The partial move selected by the player.
         /// </summary>
         MOVE current_move;
         /// <summary>
-        /// 
+        /// Is the computer on the turn?
         /// </summary>
         bool wait_for_computer;
 
         /// <summary>
-        /// 
+        /// Initialise player instances for the new game.
         /// </summary>
-        /// <param name="white_is_computer"></param>
-        /// <param name="black_is_computer"></param>
+        /// <param name="white_is_computer">Is the white player represented by a computer?</param>
+        /// <param name="black_is_computer">Is the black player represented by a computer?</param>
         private void InitPlayers(bool white_is_computer, bool black_is_computer)
         {
             white = new DamePlayer(white_is_computer, PLAYER_TYPE.max, "Bílý");
             black = new DamePlayer(black_is_computer, PLAYER_TYPE.min, "Černý");
         }
         /// <summary>
-        /// 
+        /// Initialises the engine for the new game instance.
         /// </summary>
         private void ResetGame()
         {
@@ -149,7 +149,7 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Draws the labels marking the rows and columns.
         /// </summary>
         private void GenerateEdgeLabels()
         {
@@ -213,7 +213,7 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Initialize the GUI and the engine.
         /// </summary>
         public DamebotGui()
         {
@@ -225,9 +225,9 @@ namespace damebot
         #region move selection
 
         /// <summary>
-        /// 
+        /// Creates a partial move starting with the piece laying on the <paramref name="position"/>.
+        /// Redraw if the <paramref name="position"/> contains a valid piece.
         /// </summary>
-        /// <param name="position"></param>
         private void SelectPiece(SQUARE position)
         {
             Debug.Assert(selected_squares == null);
@@ -240,10 +240,12 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Extend a move by the selected <paramref name="position"/>.
+        /// Performs the move if it is complete.
+        /// Resets the move if it is invalid.
         /// </summary>
         /// <param name="position"></param>
-        /// <exception cref="NullReferenceException"></exception>
+        /// <exception cref="NullReferenceException">Throws if the move doesn't start with a valid piece.</exception>
         private void SelectMove(SQUARE position)
         {
             Debug.Assert(selected_squares != null);
@@ -275,7 +277,7 @@ namespace damebot
             engine.PerformMove(current_move);
         }
         /// <summary>
-        /// 
+        /// Reverts the move selection and redraw board.
         /// </summary>
         void ResetMove()
         {
@@ -287,10 +289,8 @@ namespace damebot
         #region draw board and pieces
 
         /// <summary>
-        /// 
+        /// Draws the <paramref name="square"/> on the <paramref name="board_graphics"/>.
         /// </summary>
-        /// <param name="board_graphics"></param>
-        /// <param name="square"></param>
         private void DrawSquare(Graphics board_graphics, SQUARE square)
         {
             Rectangle board_square = ComputeRectangle(square);
@@ -299,7 +299,7 @@ namespace damebot
             board_graphics.FillRectangle(brush, board_square);
         }
         /// <summary>
-        /// 
+        /// Draws all squares of the <paramref name="board_graphics"/>.
         /// </summary>
         /// <param name="board_graphics"></param>
         private void DrawBoardPanel(Graphics board_graphics)
@@ -313,9 +313,8 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Draws all pieces of the board on the <paramref name="board_graphics"/>.
         /// </summary>
-        /// <param name="board_graphics"></param>
         private void DrawPieces(Graphics board_graphics)
         {
             IEnumerable<Piece> all_pieces = Enumerable.Concat(
@@ -329,16 +328,15 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Draws the board and all pieces on the <paramref name="board_graphics"/>.
         /// </summary>
-        /// <param name="board_graphics"></param>
         private void Draw(Graphics board_graphics)
         {
             DrawBoardPanel(board_graphics);
             DrawPieces(board_graphics);
         }
         /// <summary>
-        /// 
+        /// Draws the board and all pieces.
         /// </summary>
         private void Draw()
         {
@@ -349,27 +347,30 @@ namespace damebot
         #region event handlers
 
         /// <summary>
-        /// 
+        /// Handles the Move event of the <c>engine</c>.
         /// </summary>
-        /// <param name="next_player"></param>
+        /// <param name="next_player">
+        /// reference to an instance of the player on move
+        /// <c>null</c> if the compueter is on the move
+        /// </param>
         private void OnMoveHandler(IPlayer? next_player)
         {
             wait_for_computer = (next_player == null);
             ResetMove();
         }
         /// <summary>
-        /// 
+        /// Handles the Mark event of the <c>engine</c>.
         /// </summary>
-        /// <param name="move"></param>
+        /// <param name="move">The move marked by computer.</param>
         private void OnMarkHandler(MOVE move)
         {
             marked_squares = move.Squares;
             Draw();
         }
         /// <summary>
-        /// 
+        /// Handles the GameOver event of the <c>engine</c>.
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="player">the winner of the game</param>
         private void OnGameOverHandler(IPlayer player)
         {
             ResetMove();
@@ -386,19 +387,15 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Redraws the board on the Paint event of the <c>board_panel</c>.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void board_panel_Paint(object sender, PaintEventArgs e)
         {
             Draw(e.Graphics);
         }
         /// <summary>
-        /// 
+        /// Handles the MouseClick event of the <c>board_panel</c>.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void board_panel_MouseClick(object sender, MouseEventArgs e)
         {
             if (wait_for_computer)
@@ -415,10 +412,8 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Handles the Click event of the <c>new_game_button</c>.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void new_game_button_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show("Chceš zahájit novou hru?", "Nová hra?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
@@ -428,10 +423,8 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Handles the CheckedChanged event of the <c>radio_button</c>.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void radio_button_CheckedChanged(object sender, EventArgs e)
         {
             if (!(sender as RadioButton)!.Checked)
@@ -444,10 +437,8 @@ namespace damebot
             }
         }
         /// <summary>
-        /// 
+        /// Handles the MouseLeave event of the <c>background_panel</c>.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void background_panel_MouseLeave(object? sender, EventArgs e)
         {
             if (wait_for_computer)

@@ -4,28 +4,55 @@ using System.Threading.Tasks;
 namespace damebot_engine
 {
     /// <summary>
-    /// 
+    /// Handler of the game engine Move event.
     /// </summary>
-    /// <param name="next_player"></param>
+    /// <param name="next_player">
+    /// reference to an instance of the player on move
+    /// <c>null</c> if the compueter is on the move
+    /// </param>
     public delegate void MoveEvent(IPlayer? next_player);
     /// <summary>
-    /// 
+    /// Handler of the game engine Mark event.
     /// </summary>
-    /// <param name="move"></param>
+    /// <param name="move">The move marked by computer.</param>
     public delegate void MarkEvent(MOVE move);
     /// <summary>
-    /// 
+    /// Handler of the game engine GameOver event.
     /// </summary>
-    /// <param name="piece"></param>
+    /// <param name="piece">the winner of the game</param>
     public delegate void GameOverEvent(IPlayer piece);
     /// <summary>
-    /// 
+    /// Common interface for a game engine.
     /// </summary>
     public interface IEngine
     {
+        /// <summary>
+        /// Checks if the field identified by <paramref name="position"/>
+        /// contains a piece which belongs to the player on the move.
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if the field a piece which belongs to the player on the move,
+        /// <c>false</c> otherwise contains a piece
+        /// </returns>
         bool IsOnMovePiece(SQUARE position);
+        /// <summary>
+        /// Checks if the <paramref name="move"/> extended by the <paramref name="next"/> of the <paramref name="piece"/> is valid.
+        /// </summary>
+        /// <returns>
+        /// A <c>MOVE_INFO</c> instance of a valid move, if the move is valid,
+        /// otherwise an empty instance of MOVE_INFO.
+        /// </returns>
         MOVE_INFO ValidateMove(Piece piece, MOVE move, SQUARE next);
+        /// <summary>
+        /// Performs the <paramref name="move"/>, update players' pieces,
+        /// switch players, invokes neccessery events and if the next player
+        /// automatic, invokes his move generation.
+        /// </summary>
+        /// <param name="move">The move which will be performed.</param>
         void PerformMove(MOVE move);
+        /// <summary>
+        /// Generates next move for computer player and perfoms it.
+        /// </summary>
         void PerformAutomaticMove();
 
         /// <summary>
@@ -63,11 +90,20 @@ namespace damebot_engine
         /// </summary>
         IPlayer black = black;
 
+        /// <summary>
+        /// Reference to the player who will perform their next move.
+        /// </summary>
         private IPlayer player_on_move = white;
+        /// <summary>
+        /// Reference to the player who waits for their turn.
+        /// </summary>
         private IPlayer waiting_player
         {
             get => (player_on_move == white) ? black : white;
         }
+        /// <summary>
+        /// Changes the player who is on their turn to the previously waiting player.
+        /// </summary>
         private void SwitchPlayers()
         {
             player_on_move = (player_on_move == white) ? black : white;
@@ -87,10 +123,13 @@ namespace damebot_engine
         public event GameOverEvent? OnGameOver;
 
         /// <summary>
-        /// 
+        /// Checks if the field identified by <paramref name="position"/>
+        /// contains a piece which belongs to the player on the move.
         /// </summary>
-        /// <param name="position"></param>
-        /// <returns></returns>
+        /// <returns>
+        /// <c>true</c> if the field a piece which belongs to the player on the move,
+        /// <c>false</c> otherwise contains a piece
+        /// </returns>
         public bool IsOnMovePiece(SQUARE position)
         {
             if (player_on_move == white)
@@ -103,12 +142,12 @@ namespace damebot_engine
             }
         }
         /// <summary>
-        /// 
+        /// Checks if the <paramref name="move"/> extended by the <paramref name="next"/> of the <paramref name="piece"/> is valid.
         /// </summary>
-        /// <param name="piece"></param>
-        /// <param name="move"></param>
-        /// <param name="next"></param>
-        /// <returns></returns>
+        /// <returns>
+        /// A <c>MOVE_INFO</c> instance of a valid move, if the move is valid,
+        /// otherwise an empty instance of MOVE_INFO.
+        /// </returns>
         public MOVE_INFO ValidateMove(Piece piece, MOVE move, SQUARE next)
         {
             MOVE_INFO info = piece.GetMoveInfo(board, move, next);
@@ -128,9 +167,11 @@ namespace damebot_engine
         }
 
         /// <summary>
-        /// 
+        /// Performs the <paramref name="move"/>, update players' pieces,
+        /// switch players, invokes neccessery events and if the next player
+        /// automatic, invokes his move generation.
         /// </summary>
-        /// <param name="move"></param>
+        /// <param name="move">The move which will be performed.</param>
         public void PerformMove(MOVE move)
         {
             Debug.Assert(board[move.Squares[0]] != null);
@@ -164,7 +205,7 @@ namespace damebot_engine
         }
 
         /// <summary>
-        /// 
+        /// Generates next move for computer player and perfoms it.
         /// </summary>
         public void PerformAutomaticMove()
         {
@@ -173,11 +214,12 @@ namespace damebot_engine
                 .ContinueWith(PerformAutomaticMove, scheduler);
         }
         /// <summary>
-        /// 
+        /// Performs a move of computer player.
         /// </summary>
-        /// <param name="generated"></param>
+        /// <param name="generated">Asynchronously generated move.</param>
         async void PerformAutomaticMove(Task<MOVE?> generated)
         {
+            await generated;
             if (generated.Exception != null)
             {
                 Debug.WriteLine(generated.Exception);
