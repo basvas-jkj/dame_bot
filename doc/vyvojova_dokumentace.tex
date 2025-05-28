@@ -1,0 +1,103 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\title{Vývojová dokumentace programu Damebot}
+\author{Václav Stupka}
+\date{28. května 2025}
+
+\renewcommand{\tt}[1]{\texttt{#1}}
+
+\begin{document}
+	\maketitle
+	\tableofcontents
+	\section{Úvod}
+	Damebot je program, který umožňuje hrát dámu proti počítači. Tento projekt vznikl jako zápočtový program
+	pro předměty Programování v jazyce C\# a Pokročilé programování v jazyce C\# na Matematicko-fyzikální fakultě Univerzity
+	Karlovy (obor Informatika).
+	
+	Cílem projektu bylo vytvořit program, který si bude moci uživatel jednoduše stáhnout a následně ho používat
+	bez nutnosti složité a dlouho trvající instalace. Program by měl být také jednoduchý na správu a otevřený
+	budoucímu rozšiřování. Samozřejmostí je také jednoduché ovládání a (přiměřeně) pěkné uživatelské rozhraní.
+	
+	Tento dokument představuje vývojovou dokumentaci celého projektu. Dočtete se zde, které technologie
+	jsem použil pro správu projektu, jak probíhá sestavování programu a také popis nejdůležitějších částí
+	zdrojového kódu.
+	
+	\section{Struktura řešení}
+	Řešení je rozděleno na dva samostatné projekty. Projekt \textit{damebot\_engine} definuje obecné rozhraní pro psaní herního enginu a také výchozí implementaci potřebných tříd pro hraní dámy.
+	
+	Projekt \textit{damebot} implementuje grafické uživatelské rozhraní pro hraní dámy. Používá k~tomu výchozí implementaci z~projektu \textit{damebot\_engine}.
+	
+	Pro napsání programu jsem použil programovací jazyk C\# a grafický framework \textit{Windows Forms}. Jako verzovací systém jsem použil \textit{Git} spolu se vzdáleným repozitářem \textit{GitHubem}. Jako vývojové prostředí pro psaní kódu jsem použil \textit{Visual Studio}, grafiku (obrázky hracích kamenů) jsem vytvořil pomocí programu \textit{Inkscape} a tuto dokumentaci píšu v~\textit{TexStudiu}.
+	
+	\section{Získání zdrojového kódu a sestavení projektu}
+	Zdrojový kód lze najít na adrese \url{https://github.com/basvas-jkj/dame_bot}. Vytvořit lokální repozitář
+	s~kopií zdrojového kódu lze pomocí Gitu příkazem \verb|$git clone https://github.com/basvas-jkj/dame_bot.git|.
+	
+	Projekt je nejsnazší sestavit ve Visual Studiu, je možné také použít příkaz \verb|dotnet.exe build damebot/damebot.csproj| z~kořenové složky projektu. Díky závislosti \textit{damebot} na \textit{damebot\_engine} tento příkaz sestaví oba projekty.
+	
+	\section{Stručný přehled souborů}
+	\begin{description}
+		\item[damebot/DamebotGui.cs]Vykreslení uživatelského rozhraní a ovládání aplikace.
+		\item[damebor\_engine/img/] Složka obsahující obrázky hracích kamenů ve formátu PNG.
+		\item[damebor\_engine/SQUARE.cs]  Pomocná struktura \tt{SQUARE}, která ukládá souřadnice jednoho hracího pole.
+		\item[damebor\_engine/MOVE.cs] Pomocná struktura \tt{MOVE}, která ukládá jeden tah a kameny vyhozené v daném tahu.
+		\item[damebor\_engine/Piece.cs] Třídy reprezentující kameny na hracím plánu.
+		\item[damebor\_engine/DamePlayer.cs] Třída \tt{DamePlayer} reprezentující hráče.
+		\item[damebor\_engine/Board.cs] Třída \tt{DameBoard} reprezentující hrací plochu.
+		\item[damebor\_engine/DameEngine.cs] Třída \tt{DameEngine} reprezentující herní engine.
+	\end{description}
+	
+	\section{Popis vybraných částí zdrojového kódu}
+	V~této části se pokusím podrobně popsat vybrané části zdrojového kódu.
+	Omezuji se převážně na ty části, které jsou významné pro budoucí rozšiřování.
+	
+	\subsection{Reprezentace herních kamenů}
+	Základním prvkem pro implementaci je abstraktní třída \tt{Piece}. Jejím odděděním a implementací abstraktních metod lze reprezentovat libovolný hrací kámen. Třída je zamýšlena jako immutable, proto přesun kamene (metoda \tt{Move()}) a případná proměna v~dámu (\tt{Promote()}) nemění stav kamene, ale vrací novou instanci.
+	
+	Kromě přesunutí a proměny třída zajišťuje také enumerování všech tahů (\tt{EnumerateMoves()} a \tt{EnumerateJumps()}), které daný kámen může vykonat, validace zvoleného tahu (\tt{GetMoveInfo()}), testování, zda daný kámen může skákat \tt{CanCapture()}, a porovnání barvy s jiným kamenem (\tt{HasDifferent\-Colour()}).
+	
+	Projekt dále obsahuje čtyři třídy reprezentující hrací kameny české dámy: \tt{WhiteMan}, \tt{BlackMan}, \tt{WhiteKing} a \tt{BlackKing}. Implementace většiny výše zmíněných metod je společná nebo velmi podobná pro kameny stejného typu (běžný kámen × dáma) bez ohledu na barvu, proto v~typové hierarchii mezi zmíněnými třídami a třídou \tt{Piece} stojí třídy \tt{ManBase} a \tt{KingBase}.
+	
+	Struktura \tt{MOVE\_INFO} ukládá typ jednokrokového tahu (prostý přesun nebo jedna část vícenásobného skoku), souřadnici cílového pole a případný vyhozený kámen. Používá se pro uložení výsledku testování platnosti tahu a pomáhá také při enumerování možných tahů.
+	
+	\subsection{Reprezentace hrací plochy}
+	Hrací plocha je zodpovědná za ukládání hracích kamenů na příslušných pozicích, vykonání tahu včetně případné proměny, statické vyhodnocení pozice a také vygenerování výchozí pozice. Tomu odpovídají po řadě readonly indexer a metody \tt{PerformMove()}, \tt{EvaluatePosition()}, \tt{GenerateInitial\-Pieces()} deklarované v~interfacu \tt{IBoard}.
+	Třídy implementující toto rozhraní nemusí být immutable, pro potřeby hledání dalších tahů je rozhraní doplněno metodou \tt{SimulateMove()}, která vykoná tah na kopii hrací plochy.
+	
+	Toto rozhraní je dostačující pro implementaci libovolné čtvercové hrací desky, na které se hraje dáma nebo podobné hry. Třída \tt{DameBoard} před\-sta\-vu\-je výchozí implementaci pro hrací desku české dámy.
+	
+	\subsection{Reprezentace hráče}
+	Instance typu hráč (interface \tt{IPlayer}) ukládá seznam kamenů, které má hráč na hrací desce. Reprezetuje také algoritmus pro automatické hledání příštího tahu, tomu odpovídá asynchronní metoda \tt{FindNextMove()}.
+	
+	Výchozí implementace hráče, třída \tt{DamePlayer}, používá k hledání dalšího tahu minimaxový algoritmus. Konkrétně vyenumeruje možné tahy pro všech\-ny svoje figurky, a pro každý hledá rekurzivně odpovědi pro svého protivníka. Díky paralelizaci je možné tento postup opakovat až do hloubky 6 (tedy tři tahy hráče a tři reakce protivníka). Vyšší hloubka by vyžadovala další optimalizace, např. cachování a prořezávání. Pozice po těchto šesti přesunech je ohodnocena na základě počtu a typu kamenů, které oba hráči drží. Podle výsledku ohodnocení je poté na každé úrovni vybrán nejlepší tah pro daného hráče a je předán do nižší hloubky.
+	
+	Ačkoli se výchozí implementace jmenuje \tt{DamePlayer}, ve skutečnosti ne\-zá\-vi\-sí na implementačních detailech dámy: generování tahů zajišťuje třída \tt{Piece} a ohodnocení pozice interface \tt{IBoard}. \tt{DamePlayer} je díky tomu fakticky pouze implementací minimaxového algoritmu pro libovolnou hru, nikoli pouze pro (českou) dámu.
+	
+	Největším omezením rozhraní \tt{IPlayer} je požadavek na hru dvou hráčů a to i v~situaci, že používáme jiný algoritmus než minimax. Ačkoli existují modifikace dámy, které lze hrát ve více než dvou hráčích, jedná se o velmi neobvyklé hry, které navíc často vyžadují nečtvercovou hrací plochu. Tudíž toto omezení nepovažuji za příliš zásadní.
+	
+	\subsection{Herní engine}
+	Herní engine reprezentuje interface \tt{IEngine} a jeho výchozí implementace \tt{DameEngine}. Zprostředkovává komunikaci s~uživatelským rozhraním, kontroluje zvolený tah fyzického hráče a iniciuje hledání a vykonávání tahu automatického hráče. Na rozdíl od \t{IPlayer} rozhraní \tt{IEngine} nevyžaduje existenci dvou hráčů.
+	
+	Validaci tahů zajišťují metody \tt{IsOnMovePiece()} (hráč označil svůj vlast\-ní kámen) a \tt{ValidateMove()} (zvolený tah je v~souladu s~pravidly). Vlastní vykonání tahu zajišťují metody \tt{PerformMove()} a \tt{PerformAutomaticMove()} -- druhou zmíněnou bylo nutné přidat kvůli možnosti, že zahajující hráč je reprezentovaný počítačem.
+	
+	Komunikace s uživatelským rozhraním je zajištěna pomocí událostí. Kon\-krét\-ně událost \tt{OnMove} oznamuje vykonání tahu a dále předává informaci, který další hráč je právě na tahu. Událost \tt{OnMark} předává tah, který chce vykonat automatický hráč a tím umožňuje uživatelskému rozhraní tento tah oznámit fyzickému hráči. Poslední událost \tt{OnGameOver} oznamuje konec hry a současně předává hráče, který zvítězil.
+	
+	\section{Možná budoucí rozšíření}
+	Damebot je otevřený budoucímu rozšiřování. Snažil jsem se ho navrhnout tak, aby případné změny a vylepšování
+	nevyžadovaly začít programovat úplně od začátku. Ačkoli damebot implementuje pouze českou dámu, rozhraní hracího enginu je otevřené i jiné modifikace dámy. Ačkoli k tomu nebylo rozhraní navrženo, nemělo by být problém vytvořit ani
+	engine pro hry výrazně odlišné od dámy, např. pro šachy.
+	
+	Pokud bychom chtěli přidat nový kámen, stačí vytvořit nového potomka třídy \tt{Piece}. Jiné velikosti hrací plochy nebo jiné výchozí pozice lze docílit vlastní implementací interfacu \tt{IBoard}. Pokud bychom chtěli implementovat nějaký jiný algoritmus pro hledání dalšího tahu (např. efektivnější minimax nebo naopak hloupější algoritmus vhodný pro slabší hráče), stačí implementovat třídu pro rozhraní \tt{IPlayer}. Pokud bychom potřebovali změnit např. pravidla ohledně výhry jednotlivých hráčů nebo pořadí, v~jakém se hráči střídají, stačí napsat kód třídy implementující \tt{IEngine}.
+	
+	Tyto změny lze provádět nezávisle na sobě, tudíž je možné např. použít výchozí minimaxový algoritmus a výchozí hrací plochu spolu s vlastním typem hracích kamenů nebo naopak použít výchozí kameny i hrací plochu a vlastní engine, který např. umožňuje zahrát mimořádný tah při proměně běžného kamene v~dámu.
+	
+	Pokud jde o uživatelské rozhraní, jediná změna, kterou by bylo nutné provést, je inicializace příslušného enginu.
+	Přirozeným rozšířením by tedy byla možnost volby mezi různými enginy, případně možnost nahrát engine jako plugin.
+	
+\end{document}
